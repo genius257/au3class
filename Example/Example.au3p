@@ -1,0 +1,34 @@
+#include-once
+
+Class Example
+    $property = Null
+
+    Func __construct($ts = 'now')
+        $this.property = 0
+    EndFunc
+
+    Func __destruct()
+        ; Destructor code here.
+    EndFunc
+
+    Func method()
+        Return "something"
+    EndFunc
+
+    Get Func dynamic()
+        Return $this.dynamic & $this.property
+    EndFunc
+
+    Set Func dynamic($value)
+		$this.property += 1
+        $this.dynamic = $value
+    EndFunc
+EndClass
+
+$oExample = Example()
+
+$oExample.dynamic = 12
+
+MsgBox(0, "", $oExample.dynamic)
+
+MsgBox(0, "", $oExample.method())

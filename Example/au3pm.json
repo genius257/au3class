@@ -1,0 +1,11 @@
+{
+  "name": "au3classExample",
+  "version": "1.0.0",
+  "dependencies": {
+    "autoit": ">=3.3.14.5",
+    "au3obj": "^1.0.0"
+  },
+  "scripts": {
+    "build": "build.bat"
+  }
+}
