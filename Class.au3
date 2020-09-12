@@ -61,13 +61,13 @@ Func Class_Parse_Region($aRegion)
 
     Local $iRegionShards = UBound($aRegionShards, 1)
 
-    Local $properties[$iRegionShards]
+    Local $properties[$iRegionShards + 1]
     $properties[0] = 0
-    Local $methods[$iRegionShards]
+    Local $methods[$iRegionShards + 1]
     $methods[0] = 0
-    Local $getters[$iRegionShards]
+    Local $getters[$iRegionShards + 1]
     $getters[0] = 0
-    Local $setters[$iRegionShards]
+    Local $setters[$iRegionShards + 1]
     $setters[0] = 0
     Local $constructor = Null
     Local $constructorParameters = ""
