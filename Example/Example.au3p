@@ -32,3 +32,5 @@ $oExample.dynamic = 12
 MsgBox(0, "", $oExample.dynamic)
 
 MsgBox(0, "", $oExample.method())
+
+$oExample = Null
