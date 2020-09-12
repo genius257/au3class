@@ -149,7 +149,6 @@ Func Class_Parse_Region($aRegion)
     If Not ($deconstructor = Null) Then
         $methodName = StringRegExp($methods[$deconstructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
         $sResult &= StringFormat('Func %s($this)\n', $functionPrefix&$methodName)
-        $sResult &= StringFormat('\t$this = $this.parent\n')
         $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($methods[$deconstructor], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
         $sResult &= StringFormat('EndFunc\n\n')
     EndIf
