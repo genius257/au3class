@@ -53,9 +53,9 @@ Func Class_Parse_Region($aRegion)
     Local $sResult = ''
 
     Local Static $sRegex = '(?s)(?m)(^\h*(?:#cs|#comments-start)(?:.*?)(?=^\h*(?:#ce|#comments-end)$)\h*(?:#ce|#comments-end)|^\h*(?:(?:Get|Set)\h*)?\QFunc \E(?:[a-zA-Z0-9_]+)\([^)]*\)$(?:.*?)(?=^\h*\QEndFunc\E$)\h*EndFunc|\h*\$[a-zA-Z0-9_]+(?:\h*=\h*\N*)?$)'
-    Local Static $functionPrefix = StringFormat('__Class_%s_', $sClassName)
-    Local Static $getterPrefix = StringFormat('__Getter%s', $functionPrefix)
-    Local Static $setterPrefix = StringFormat('__Setter%s', $functionPrefix)
+    Local $functionPrefix = StringFormat('__Class_%s_', $sClassName)
+    Local $getterPrefix = StringFormat('__Getter%s', $functionPrefix)
+    Local $setterPrefix = StringFormat('__Setter%s', $functionPrefix)
 
     Local $aRegionShards = StringRegExp($aRegion[2], $sRegex, 3)
 
