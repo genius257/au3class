@@ -52,7 +52,7 @@ Func Class_Parse_Region($aRegion)
 
     Local $sResult = ''
 
-    Local Static $sRegex = '(?s)(?m)(^\h*(?:#cs|#comments-start)(?:.*?)(?=^\h*(?:#ce|#comments-end)$)\h*(?:#ce|#comments-end)|^\h*(?:(?:Get|Set)\h*)?\QFunc \E(?:[a-zA-Z0-9_]+)\([^)]*\)$(?:.*?)(?=^\h*\QEndFunc\E$)\h*EndFunc|\h*\$[a-zA-Z0-9_]+(?:\h*=\h*\N*)?$)'
+    Local Static $sRegex = '(?s)(?m)(^\h*(?:#cs|#comments-start)(?:.*?)(?=^\h*(?:#ce|#comments-end)$)\h*(?:#ce|#comments-end)|^\h*(?:(?:Get|Set)\h*)?\QFunc \E(?:[a-zA-Z0-9_]+)\(\N*\)$(?:.*?)(?=^\h*\QEndFunc\E$)\h*EndFunc|\h*\$[a-zA-Z0-9_]+(?:\h*=\h*\N*)?$)'
     Local $functionPrefix = StringFormat('__Class_%s_', $sClassName)
     Local $getterPrefix = StringFormat('__Getter%s', $functionPrefix)
     Local $setterPrefix = StringFormat('__Setter%s', $functionPrefix)
@@ -103,7 +103,7 @@ Func Class_Parse_Region($aRegion)
     Next
 
     If Not ($constructor = Null) Then
-        $constructorParameters = StringRegExp($methods[$constructor], '^\h*Func [a-zA-Z0-9_]+\(([^)]*)\)', 1)[0]
+        $constructorParameters = StringRegExp($methods[$constructor], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
     EndIf
 
     #Region Main function
@@ -166,7 +166,7 @@ Func Class_Parse_Region($aRegion)
         $methodName = StringRegExp($setters[$i], '^\h*Set\h+Func\h+([^\(\h]+)', 1)[0]
         $sResult &= StringFormat('Func %s($_oAccessorObject)\n', $setterPrefix&$methodName)
         $sResult &= StringFormat('\tLocal $this = $_oAccessorObject.parent\n')
-        $methodParameter = StringRegExp($setters[$i], '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\(([^)]*)\)', 1)
+        $methodParameter = StringRegExp($setters[$i], '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
         $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
         If @error = 0 Then
             $sResult &= StringFormat('\tLocal $%s = $_oAccessorObject.ret\n', $methodParameter[0])
@@ -178,7 +178,7 @@ Func Class_Parse_Region($aRegion)
     For $i = 1 To $methods[0] Step +1
         If $i = $constructor Or $i = $deconstructor Then ContinueLoop
         $methodName = StringRegExp($methods[$i], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $methodParameter = StringRegExp($methods[$i], '^\h*Func\h+[a-zA-Z0-9_]+\(([^)]*)\)', 1)
+        $methodParameter = StringRegExp($methods[$i], '^\h*Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
         $methodParameter = StringSplit($methodParameter[0], ',')
         ;_ArrayDisplay($methodParameter)
         ;$methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
