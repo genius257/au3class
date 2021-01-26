@@ -1,7 +1,7 @@
 #include-once
 #include <Array.au3>
 
-Global Const $__AU3P_ClassRegionPattern = '(?s)(?m)^\h*\QClass \E([a-zA-Z]+)$(.*?)(?=^\h*\QEndClass\E$)EndClass'
+Global Const $__AU3P_ClassRegionPattern = '(?s)(?m)^\h*\QClass \E([a-zA-Z0-9_]+)$(.*?)(?=^\h*\QEndClass\E$)EndClass'
 
 If StringRegExp(@ScriptFullPath, '\.au3p$', 0) Then
     Class_Convert_File(@ScriptFullPath)
