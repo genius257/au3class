@@ -133,7 +133,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= StringFormat('\t$this.__seal()\n')
     If Not ($constructor = Null) Then
         $methodName = StringRegExp($methods[$constructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('\t%s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & StringRegExpReplace($constructorParameters, '(\$[^\h=,]+)\h*=[^,\)]+', '$1'));FIXME: third argument in StringFormat need to be implemented. Function arguments, without the maybe existing default value definitions
+        $sResult &= StringFormat('\t%s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & StringRegExpReplace($constructorParameters, '(\$[^\h=,]+)\h*=[^,]+', '$1'));FIXME: third argument in StringFormat need to be implemented. Function arguments, without the maybe existing default value definitions
         $sResult &= StringFormat('\tIf @error <> 0 Then Return SetError(@error, @extended, $this)\n')
     EndIf
     $sResult &= StringFormat('\tReturn $this\n')
