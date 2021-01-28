@@ -39,7 +39,7 @@ Func Class_Parse_File($sFile)
 EndFunc
 
 Func Class_Parse_Content($sContent)
-    Return '#include "AutoItObject_Internal.au3"' & @CRLF & StringRegExpReplaceCallback($sContent, $__AU3P_ClassRegionPattern, "Class_Parse_Region")
+    Return '#include "AutoItObject_Internal.au3"' & @CRLF & StringRegExpReplaceCallback($sContent, $__AU3P_ClassRegionPattern, Class_Parse_Region)
 EndFunc
 
 #cs
