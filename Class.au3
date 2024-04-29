@@ -61,14 +61,11 @@ Func Class_Parse_Region($aRegion)
 
     Local $iRegionShards = UBound($aRegionShards, 1)
 
-    Local $properties[$iRegionShards + 1]
-    $properties[0] = 0
-    Local $methods[$iRegionShards + 1]
-    $methods[0] = 0
-    Local $getters[$iRegionShards + 1]
-    $getters[0] = 0
-    Local $setters[$iRegionShards + 1]
-    $setters[0] = 0
+    Local $properties[]
+    Local $methods[]
+    Local $getters[]
+    Local $setters[]
+
     Local $constructor = Null
     Local $constructorParameters = ""
     Local $deconstructor = Null
@@ -79,22 +76,22 @@ Func Class_Parse_Region($aRegion)
 
         Switch (StringLower(StringRegExp($sRegionShard, "^\h*(.)", 1)[0]))
             Case '$' ; Property
-                $properties[0]+=1
-                $properties[$properties[0]] = $sRegionShard
+                Local $sName = Class_Property_Get_Name($sRegionShard)
+                $properties[$sName] = $sRegionShard
             Case 'f' ; Method
-                $methods[0]+=1
-                $methods[$methods[0]] = $sRegionShard
+                Local $sMethodName = Class_Function_Get_Name($sRegionShard)
+                $methods[$sMethodName] = $sRegionShard
 
                 ;check if method is the constructor and add the index to the constructor ref.
-                If StringRegExp($sRegionShard, '^\h*Func __construct\h*\(', 0) Then $constructor = $methods[0]
+                If StringRegExp($sRegionShard, '^\h*Func __construct\h*\(', 0) Then $constructor = $sMethodName
                 ;check if method is the deconstructor and add the index to the constructor ref.
-                If StringRegExp($sRegionShard, '^\h*Func __destruct\h*\(', 0) Then $deconstructor = $methods[0]
+                If StringRegExp($sRegionShard, '^\h*Func __destruct\h*\(', 0) Then $deconstructor = $sMethodName
             Case 'g' ; Getter
-                $getters[0]+=1
-                $getters[$getters[0]] = $sRegionShard
+                Local $sMethodName = Class_Getter_Get_Name($sRegionShard)
+                $getters[$sMethodName] = $sRegionShard
             Case 's' ; Setter
-                $setters[0]+=1
-                $setters[$setters[0]] = $sRegionShard
+                Local $sMethodName = Class_Setter_Get_Name($sRegionShard)
+                $setters[$sMethodName] = $sRegionShard
             Case Else
                 ;FIXME: add shard ID to the StringFormat
                 ConsoleWriteError(StringFormat("WARNING: Shard #%s not recognized and will be ignored.\n", '??'))
@@ -109,96 +106,73 @@ Func Class_Parse_Region($aRegion)
     #Region Main function
     $sResult &= StringFormat('Func %s(%s)\n', $sClassName, $constructorParameters)
     $sResult &= StringFormat('\tLocal $this = IDispatch()\n')
-    For $i = 1 To $properties[0] Step +1
-        $sResult &= StringFormat('\t$this.%s\n', StringRegExpReplace($properties[$i], '^\h*\$', '', 1))
+
+    $sResult &= StringFormat("; Properties\n")
+    For $property In MapKeys($properties)
+        $sResult &= StringFormat('\t$this.%s\n', $property)
     Next
+
     Local $methodName
-    For $i = 1 To $getters[0] Step +1
-        $methodName = StringRegExp($getters[$i], '^\h*Get\h+Func\h*([^\(\h]+)', 1)[0]
+    $sResult &= StringFormat("; Getters\n")
+    For $getter In MapKeys($getters)
+        $methodName = $getter
         $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $methodName, $getterPrefix&$methodName)
     Next
-    For $i = 1 To $setters[0] Step +1
-        $methodName = StringRegExp($setters[$i], '^\h*Set\h+Func\h*([^\(\h]+)', 1)[0]
+
+    $sResult &= StringFormat("; Setters\n")
+    For $setter In MapKeys($setters)
+        $methodName = $setter
         $sResult &= StringFormat('\t$this.__defineSetter("%s", %s)\n', $methodName, $setterPrefix&$methodName)
     Next
-    For $i = 1 To $methods[0] Step +1
-        If $i = $constructor Or $i = $deconstructor Then ContinueLoop
-        $methodName = StringRegExp($methods[$i], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $methodName, $functionPrefix&$methodName)
+
+    $sResult &= StringFormat("; Methods\n")
+    For $method In MapKeys($methods)
+        If $method = $constructor Or $method = $deconstructor Then ContinueLoop
+        $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $method, $functionPrefix&$method)
     Next
+
+    $sResult &= StringFormat("; Deconstructor\n")
     If Not ($deconstructor = Null) Then
-        $methodName = StringRegExp($methods[$deconstructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
+        $methodName = $deconstructor
         $sResult &= StringFormat('\t$this.__destructor(%s)\n', $functionPrefix&$methodName)
     EndIf
+    
+    $sResult &= StringFormat("; Seal object, to prevent dynamic property declaration\n")
     $sResult &= StringFormat('\t$this.__seal()\n')
+    $sResult &= StringFormat("; Constructor\n")
     If Not ($constructor = Null) Then
-        $methodName = StringRegExp($methods[$constructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
+        $methodName = $constructor
         $sResult &= StringFormat('\t%s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & StringRegExpReplace($constructorParameters, '(\$[^\h=,]+)\h*=[^,]+', '$1'));FIXME: third argument in StringFormat need to be implemented. Function arguments, without the maybe existing default value definitions
         $sResult &= StringFormat('\tIf @error <> 0 Then Return SetError(@error, @extended, $this)\n')
     EndIf
+
     $sResult &= StringFormat('\tReturn $this\n')
     $sResult &= StringFormat('EndFunc\n\n')
     #EndRegion Main function
 
     If Not ($constructor = Null) Then
-        $methodName = StringRegExp($methods[$constructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('Func %s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & $constructorParameters)
-        $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($methods[$constructor], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
-        $sResult &= StringFormat('EndFunc\n\n')
+        $sResult &= Class_Make_Constructor($methods[$constructor], $functionPrefix, $constructorParameters)
     EndIf
 
     If Not ($deconstructor = Null) Then
-        $methodName = StringRegExp($methods[$deconstructor], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('Func %s($this)\n', $functionPrefix&$methodName)
-        $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($methods[$deconstructor], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
-        $sResult &= StringFormat('EndFunc\n\n')
+        $sResult &= Class_Make_Desctructor($methods[$deconstructor], $functionPrefix)
     EndIf
 
-    For $i = 1 To $getters[0] Step +1
-        $methodName = StringRegExp($getters[$i], '^\h*Get\h+Func\h*([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('Func %s($_oAccessorObject)\n', $getterPrefix&$methodName)
-        $sResult &= StringFormat('\tLocal $this = $_oAccessorObject.parent\n')
-        $sResult &= StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($getters[$i], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName))
-        $sResult &= StringFormat('EndFunc\n\n')
-    Next
-    Local $methodParameter
-    For $i = 1 To $setters[0] Step +1
-        $methodName = StringRegExp($setters[$i], '^\h*Set\h+Func\h+([^\(\h]+)', 1)[0]
-        $sResult &= StringFormat('Func %s($_oAccessorObject)\n', $setterPrefix&$methodName)
-        $sResult &= StringFormat('\tLocal $this = $_oAccessorObject.parent\n')
-        $methodParameter = StringRegExp($setters[$i], '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
-        $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
-        If @error = 0 Then
-            $sResult &= StringFormat('\tLocal $%s = $_oAccessorObject.ret\n', $methodParameter[0])
-        EndIf
-        $sResult &= StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($setters[$i], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName))
-        $sResult &= StringFormat('EndFunc\n\n')
-    Next
-    Local $methodParameterShards
-    For $i = 1 To $methods[0] Step +1
-        If $i = $constructor Or $i = $deconstructor Then ContinueLoop
-        $methodName = StringRegExp($methods[$i], '^\h*Func\h*([^\(\h]+)', 1)[0]
-        $methodParameter = StringRegExp($methods[$i], '^\h*Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
-        $methodParameter = StringSplit($methodParameter[0], ',')
-        ;_ArrayDisplay($methodParameter)
-        ;$methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
-        $sResult &= StringFormat('Func %s($this)\n', $functionPrefix&$methodName)
-        If $methodParameter[0] >= 1 And Not ($methodParameter[1] == "") Then
-            For $j = 1 To $methodParameter[0] Step +1
-                $methodParameterShards = StringRegExp($methodParameter[$j], '^\h*\$([a-zA-Z0-9_]+)(?:\h*=\h*(.*)$)?', 1)
-                If UBound($methodParameterShards, 1) <= 1 Or $methodParameterShards[1] == "" Then
-                    $sResult &= StringFormat('\tLocal $%s = $this.arguments.values[%s]\n', $methodParameterShards[0], $j-1)
-                Else
-                    $sResult &= StringFormat('\tLocal $%s = $this.arguments.length >= %s ? $this.arguments.values[%s] : %s\n', $methodParameterShards[0], $j, $j-1, $methodParameterShards[1])
-                EndIf
-            Next
-        EndIf
-        $sResult &= StringFormat('\t$this = $this.parent\n')
-        $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($methods[$i], '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
-        $sResult &= StringFormat('EndFunc\n\n')
+    For $getter In $getters
+        $sResult &= Class_Make_Getter($getter, $getterPrefix)
     Next
 
-    ;_ArrayDisplay($aRegionShards)
+    Local $methodParameter
+    For $setter In $setters
+        $sResult &= Class_Make_Setter($setter, $setterPrefix)
+    Next
+
+    Local $methodParameterShards
+    For $method In MapKeys($methods)
+        If $method = $constructor Or $method = $deconstructor Then ContinueLoop
+        $sResult &= Class_Make_Method($methods[$method], $functionPrefix)
+    Next
+
     Return $sResult
 EndFunc
 
@@ -269,3 +243,85 @@ Func StringRegExpReplaceCallbackEx($sString, $sPattern, $sFunc, $iLimit = 0, $vE
 
     Return SetExtended($iDone, $sString)
 EndFunc   ;==>StringRegExpReplaceCallback
+
+Func Class_Make_Constructor($sSource, $functionPrefix, $constructorParameters)
+    $methodName = Class_Function_Get_Name($sSource)
+    Return _
+        StringFormat('Func %s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & $constructorParameters) & _
+        StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)) & _
+        StringFormat('EndFunc\n\n')
+EndFunc
+
+Func Class_Make_Desctructor($sSource, $functionPrefix)
+    $methodName = Class_Function_Get_Name($sSource)
+    Return _
+        StringFormat('Func %s($this)\n', $functionPrefix&$methodName) & _
+        StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)) & _
+        StringFormat('EndFunc\n\n')
+EndFunc
+
+Func Class_Make_Getter($sSource, $getterPrefix)
+    $methodName = Class_Getter_Get_Name($sSource)
+    Return _
+        StringFormat('Func %s($_oAccessorObject)\n', $getterPrefix&$methodName) & _
+        StringFormat('\tLocal $this = $_oAccessorObject.parent\n') & _
+        StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName)) & _
+        StringFormat('EndFunc\n\n')
+EndFunc
+
+Func Class_Make_Setter($sSource, $setterPrefix)
+    Local $sResult, _
+        $methodName = Class_Setter_Get_Name($sSource)
+
+    $sResult &= StringFormat('Func %s($_oAccessorObject)\n', $setterPrefix&$methodName)
+    $sResult &= StringFormat('\tLocal $this = $_oAccessorObject.parent\n')
+    Local $methodParameter = StringRegExp($sSource, '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
+    $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
+    If @error = 0 Then
+        $sResult &= StringFormat('\tLocal $%s = $_oAccessorObject.ret\n', $methodParameter[0])
+    EndIf
+    $sResult &= StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName))
+    $sResult &= StringFormat('EndFunc\n\n')
+
+    Return $sResult
+EndFunc
+
+Func Class_Make_Method($sSource, $functionPrefix)
+    Local $sResult, _
+        $methodName = Class_Function_Get_Name($sSource), _
+        $methodParameter = StringRegExp($sSource, '^\h*Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
+    
+    $methodParameter = StringSplit($methodParameter[0], ',')
+    $sResult &= StringFormat('Func %s($this)\n', $functionPrefix&$methodName)
+    If $methodParameter[0] >= 1 And Not ($methodParameter[1] == "") Then
+        For $j = 1 To $methodParameter[0] Step +1
+            $methodParameterShards = StringRegExp($methodParameter[$j], '^\h*\$([a-zA-Z0-9_]+)(?:\h*=\h*(.*)$)?', 1)
+            If UBound($methodParameterShards, 1) <= 1 Or $methodParameterShards[1] == "" Then
+                $sResult &= StringFormat('\tLocal $%s = $this.arguments.values[%s]\n', $methodParameterShards[0], $j-1)
+            Else
+                $sResult &= StringFormat('\tLocal $%s = $this.arguments.length >= %s ? $this.arguments.values[%s] : %s\n', $methodParameterShards[0], $j, $j-1, $methodParameterShards[1])
+            EndIf
+        Next
+    EndIf
+    $sResult &= StringFormat('\t$this = $this.parent\n')
+    $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
+    $sResult &= StringFormat('EndFunc\n\n')
+
+    Return $sResult
+EndFunc
+
+Func Class_Function_Get_Name($sSource)
+    Return StringRegExp($sSource, '^\h*Func\h*([^\(\h]+)', 1)[0]
+EndFunc
+
+Func Class_Getter_Get_Name($sSource)
+    Return StringRegExp($sSource, '^\h*Get\h+Func\h*([^\(\h]+)', 1)[0]
+EndFunc
+
+Func Class_Setter_Get_Name($sSource)
+    Return StringRegExp($sSource, '^\h*Set\h+Func\h+([^\(\h]+)', 1)[0]
+EndFunc
+
+Func Class_Property_Get_Name($sSource)
+    Return StringRegExpReplace($sSource, '^\h*\$', '', 1)
+EndFunc
