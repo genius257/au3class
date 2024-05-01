@@ -59,12 +59,10 @@ Func Class_Parse_Region($aRegion)
 
     Local $aRegionShards = StringRegExp($aRegion[2], $sRegex, 3)
 
-    Local $iRegionShards = UBound($aRegionShards, 1)
-
-    Local $properties[]
-    Local $methods[]
-    Local $getters[]
-    Local $setters[]
+    Local $properties[], _
+        $methods[], _
+        $getters[], _
+        $setters[]
 
     Local $constructor = Null
     Local $constructorParameters = ""
@@ -103,8 +101,36 @@ Func Class_Parse_Region($aRegion)
         $constructorParameters = StringRegExp($methods[$constructor], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
     EndIf
 
+    Local $sObjectStruct = StringFormat("'int RefCount;int RefCount;int Size;ptr Object;ptr Methods[7];ptr Properties[%s];'", UBound($properties))
+
     #Region Main function
     $sResult &= StringFormat('Func %s(%s)\n', $sClassName, $constructorParameters)
+
+    $sResult &= "Local Static $QueryInterface = DllCallbackRegister(__Object__Class_"&$sClassName&"_QueryInterface, 'LONG', 'ptr;ptr;ptr')"
+    $sResult &= ", $AddRef = DllCallbackRegister(__Object__Class_"&$sClassName&"_AddRef, 'dword', 'PTR')"
+    $sResult &= ", $Release = DllCallbackRegister(__Object__Class_"&$sClassName&"_Release, 'dword', 'PTR')"
+    $sResult &= ", $GetTypeInfoCount = DllCallbackRegister(__Object__Class_"&$sClassName&"_GetTypeInfoCount, 'long', 'ptr;ptr')"
+    $sResult &= ", $GetTypeInfo = DllCallbackRegister(__Object__Class_"&$sClassName&"_GetTypeInfo, 'long', 'ptr;uint;int;ptr')"
+    $sResult &= ", $GetIDsOfNames = DllCallbackRegister(__Object__Class_"&$sClassName&"_GetIDsOfNames, 'long', 'ptr;ptr;ptr;uint;int;ptr')"
+    $sResult &= ", $Invoke = DllCallbackRegister(__Object__Class_"&$sClassName&"_Invoke, 'long', 'ptr;int;ptr;int;ushort;ptr;ptr;ptr;ptr')"
+    $sResult &= @CRLF
+    $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&")"&@CRLF
+    $sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($QueryInterface), 1)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($AddRef), 2)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($Release), 3)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($GetTypeInfoCount), 4)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($GetTypeInfo), 5)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($GetIDsOfNames), 6)"&@CRLF
+	$sResult &= "DllStructSetData($tObject, 'Methods', DllCallbackGetPtr($Invoke), 7)"&@CRLF
+    $sResult &= "DllStructSetData($tObject, 'RefCount', 1)"&@CRLF ; initial ref count is 1
+	$sResult &= "DllStructSetData($tObject, 'Size', 7)"&@CRLF ; number of interface methods
+
+    $sResult &= '$pObject = DllCall("kernel32.dll", "ptr", "GlobalLock", "handle", DllCall("kernel32.dll", "handle", "GlobalAlloc", "uint", 0x0002, "ulong_ptr", DllStructGetSize($tObject))[0])[0]'&@CRLF
+    $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tObject, "ulong_ptr", DllStructGetSize($tObject))'&@CRLF
+    $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pObject)"&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods"))'&@CRLF
+    $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), $__AOI_IID_IDispatch, Default, True)'&@CRLF
+
     $sResult &= StringFormat('\tLocal $this = IDispatch()\n')
 
     $sResult &= StringFormat("; Properties\n")
