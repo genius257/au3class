@@ -101,6 +101,81 @@ Func Class_Parse_Region($aRegion)
         $constructorParameters = StringRegExp($methods[$constructor], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
     EndIf
 
+    #Region Variant Conversion Helper
+    $sResult &= "Func ___Class__"&$sClassName&"_VariantHelper()"&@CRLF
+    $sResult &= 'Local Static $tVariant = DllStructCreate("ushort vt;ushort r1;ushort r2;ushort r3;PTR data;PTR data2")'&@CRLF
+    $sResult &= 'Local Static $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;")'&@CRLF
+    $sResult &= 'Local Static $oObject = 0'&@CRLF
+    $sResult &= 'If $oObject <> 0 Then Return $oObject'&@CRLF
+    $sResult &= 'Local $hQueryInterface = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperQueryInterface, "LONG", "ptr;ptr;ptr")'&@CRLF
+    $sResult &= 'Local $hAddRef = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperAddRef, "dword", "PTR")'&@CRLF
+    $sResult &= 'Local $hRelease = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperRelease, "dword", "PTR")'&@CRLF
+    $sResult &= 'Local $hGetTypeInfoCount = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount, "long", "ptr;ptr")'&@CRLF
+    $sResult &= 'Local $hGetTypeInfo = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperGetTypeInfo, "long", "ptr;uint;int;ptr")'&@CRLF
+    $sResult &= 'Local $hGetIDsOfNames = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperGetIDsOfNames, "long", "ptr;ptr;ptr;uint;int;ptr")'&@CRLF
+    $sResult &= 'Local $hInvoke = DllCallbackRegister(___Class__'&$sClassName&'_VariantHelperInvoke, "long", "ptr;int;ptr;int;ushort;ptr;ptr;ptr;ptr")'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hQueryInterface), 1)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hAddRef), 2)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hRelease), 3)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hGetTypeInfoCount), 4)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hGetTypeInfo), 5)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hGetIDsOfNames), 6)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Methods", DllCallbackGetPtr($hInvoke), 7)'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "RefCount", 1) ; initial ref count is 1'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Size", 7) ; number of interface methods'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods")) ; Interface method pointers'&@CRLF
+    $sResult &= 'DllStructSetData($tVariant, "Variant", DllStructGetPtr($tVariant))'&@CRLF
+    $sResult &= '$oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True) ; pointer that''s wrapped into object'&@CRLF
+    $sResult &= 'Return $oObject'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperQueryInterface($pSelf, $pRIID, $pObj)'&@CRLF
+    $sResult &= 'If $pObj=0 Then Return $__AOI_E_POINTER'&@CRLF
+	$sResult &= 'Local $sGUID=DllCall("ole32.dll", "int", "StringFromGUID2", "PTR", $pRIID, "wstr", "", "int", 40)[2]'&@CRLF
+	$sResult &= 'If (Not ($sGUID="{00020400-0000-0000-C000-000000000046}")) And (Not ($sGUID="{00000000-0000-0000-C000-000000000046}")) Then Return 0x80004002'&@CRLF
+	$sResult &= 'Local $tStruct = DllStructCreate("ptr", $pObj)'&@CRLF
+	$sResult &= 'DllStructSetData($tStruct, 1, $pSelf)'&@CRLF
+	$sResult &= '___Class__'&$sClassName&'_VariantHelperAddRef($pSelf)'&@CRLF
+	$sResult &= 'Return 0'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperAddRef($pSelf)'&@CRLF
+	$sResult &= 'Local $tStruct = DllStructCreate("int Ref", $pSelf - 8)'&@CRLF
+	$sResult &= '$tStruct.Ref += 1'&@CRLF
+	$sResult &= 'Return $tStruct.Ref'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperRelease($pSelf)'&@CRLF
+    $sResult &= 'Return 1'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount($pSelf, $pctinfo)'&@CRLF
+    $sResult &= 'DllStructSetData(DllStructCreate("UINT",$pctinfo),1, 0)'&@CRLF
+	$sResult &= 'Return $__AOI_S_OK'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfo($pSelf, $iTInfo, $lcid, $ppTInfo)'&@CRLF
+	$sResult &= 'If $iTInfo<>0 Then Return 0x8002000B'&@CRLF
+	$sResult &= 'If $ppTInfo=0 Then Return 0x80070057'&@CRLF
+	$sResult &= 'Return 0'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetIDsOfNames($pSelf, $riid, $rgszNames, $cNames, $lcid, $rgDispId)'&@CRLF
+	$sResult &= 'Local $tIds = DllStructCreate("long i", $rgDispId)'&@CRLF
+    $sResult &= 'DllStructSetData($tIds, 1, 1)'&@CRLF
+    $sResult &= 'Return 0'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperInvoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)'&@CRLF
+    $sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $pSelf - 8)'&@CRLF
+    $sResult &= 'If BitAND($wFlags, 2) Then ; DISPATCH_PROPERTYGET'&@CRLF
+    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
+    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", $tObject.Variant)'&@CRLF
+    $sResult &= 'Return 0'&@CRLF
+    $sResult &= 'EndIf'&@CRLF
+    $sResult &= 'If BitAND($wFlags, 4) Then ; DISPATCH_PROPERTYPUT'&@CRLF
+    $sResult &= '$tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
+    $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
+    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$tObject.Variant, "ptr", $tParams.rgvargs)'&@CRLF
+    $sResult &= 'EndIf'&@CRLF
+    $sResult &= 'Return 0x80020009 ; DISP_E_EXCEPTION'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    #EndRegion Variant Conversion Helper
+
     Local $sObjectStruct = StringFormat("'int RefCount;int RefCount;int Size;ptr Object;ptr Methods[7];ptr Properties[%s];'", UBound($properties))
 
     #Region Main function
