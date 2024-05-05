@@ -174,6 +174,22 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndIf'&@CRLF
     $sResult &= 'Return 0x80020009 ; DISP_E_EXCEPTION'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
+	$sResult &= 'Local $oObject = ___Class__'&$sClassName&'_VariantHelper()'&@CRLF
+	$sResult &= '$oObject.a = $vValue'&@CRLF
+	$sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $oObject - 8)'&@CRLF
+	$sResult &= 'Local $tVariant = DllStructCreate("ushort vt;ushort r1;ushort r2;ushort r3;PTR data;PTR data2")'&@CRLF
+	$sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","struct*",$tVariant)'&@CRLF
+	$sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","struct*",$tVariant, "ptr", $tObject.Variant)'&@CRLF
+	$sResult &= 'Return $tVariant'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
+    $sResult &= 'Func ___Class__'&$sClassName&'_FromVariant($pVariant)'&@CRLF
+	$sResult &= 'Local $oObject = ___Class__'&$sClassName&'_VariantHelper()'&@CRLF
+	$sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $oObject - 8)'&@CRLF
+	$sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
+	$sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$tObject.Variant, "struct*", $pVariant)'&@CRLF
+	$sResult &= 'Return $oObject.a'&@CRLF
+    $sResult &= 'EndFunc'&@CRLF
     #EndRegion Variant Conversion Helper
 
     Local $sObjectStruct = StringFormat("'int RefCount;int RefCount;int Size;ptr Object;ptr Methods[7];ptr Properties[%s];'", UBound($properties))
