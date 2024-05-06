@@ -390,15 +390,11 @@ Func Class_Make_Setter($sSource, $setterPrefix)
     Local $sResult, _
         $methodName = Class_Setter_Get_Name($sSource)
 
-    $sResult &= StringFormat('Func %s($_oAccessorObject)\n', $setterPrefix&$methodName)
-    $sResult &= StringFormat('\tLocal $this = $_oAccessorObject.parent\n')
+    $sResult &= StringFormat('Func %s($this)\n', $setterPrefix&$methodName)
     Local $methodParameter = StringRegExp($sSource, '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
     $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
-    If @error = 0 Then
-        $sResult &= StringFormat('\tLocal $%s = $_oAccessorObject.ret\n', $methodParameter[0])
-    EndIf
-    $sResult &= StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName))
-    $sResult &= StringFormat('EndFunc\n\n')
+    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
+    $sResult &= StringFormat('\nEndFunc\n\n')
 
     Return $sResult
 EndFunc
