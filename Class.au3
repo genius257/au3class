@@ -381,10 +381,9 @@ EndFunc
 Func Class_Make_Getter($sSource, $getterPrefix)
     $methodName = Class_Getter_Get_Name($sSource)
     Return _
-        StringFormat('Func %s($_oAccessorObject)\n', $getterPrefix&$methodName) & _
-        StringFormat('\tLocal $this = $_oAccessorObject.parent\n') & _
-        StringFormat('\t%s\n', StringRegExpReplaceCallbackEx(StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '\$this\.([a-zA-Z0-9_]+)', 'Class_Replace_AccessorProperty', 0, $methodName)) & _
-        StringFormat('EndFunc\n\n')
+        StringFormat('Func %s($this)\n', $getterPrefix&$methodName) & _
+        StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0) & _
+        StringFormat('\nEndFunc\n\n')
 EndFunc
 
 Func Class_Make_Setter($sSource, $setterPrefix)
