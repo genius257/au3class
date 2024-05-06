@@ -416,7 +416,6 @@ Func Class_Make_Method($sSource, $functionPrefix)
             EndIf
         Next
     EndIf
-    $sResult &= StringFormat('\t$this = $this.parent\n')
     $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
     $sResult &= StringFormat('EndFunc\n\n')
 
