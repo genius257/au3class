@@ -64,9 +64,7 @@ Func Class_Parse_Region($aRegion)
         $getters[], _
         $setters[]
 
-    Local $constructor = Null
     Local $constructorParameters = ""
-    Local $deconstructor = Null
 
     Local $sRegionShard
     For $sRegionShard In $aRegionShards
@@ -79,11 +77,6 @@ Func Class_Parse_Region($aRegion)
             Case 'f' ; Method
                 Local $sMethodName = Class_Function_Get_Name($sRegionShard)
                 $methods[$sMethodName] = $sRegionShard
-
-                ;check if method is the constructor and add the index to the constructor ref.
-                If StringRegExp($sRegionShard, '^\h*Func __construct\h*\(', 0) Then $constructor = $sMethodName
-                ;check if method is the deconstructor and add the index to the constructor ref.
-                If StringRegExp($sRegionShard, '^\h*Func __destruct\h*\(', 0) Then $deconstructor = $sMethodName
             Case 'g' ; Getter
                 Local $sMethodName = Class_Getter_Get_Name($sRegionShard)
                 $getters[$sMethodName] = $sRegionShard
@@ -97,8 +90,8 @@ Func Class_Parse_Region($aRegion)
         EndSwitch
     Next
 
-    If Not ($constructor = Null) Then
-        $constructorParameters = StringRegExp($methods[$constructor], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
+    If MapExists($methods, '__construct') Then
+        $constructorParameters = StringRegExp($methods['__construct'], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
     EndIf
 
     #Region Variant Conversion Helper
@@ -244,21 +237,25 @@ Func Class_Parse_Region($aRegion)
 
     $sResult &= StringFormat("; Methods\n")
     For $method In MapKeys($methods)
-        If $method = $constructor Or $method = $deconstructor Then ContinueLoop
+        Switch $method
+            Case "__construct", "__destruct"
+                ContinueLoop
+            Case Else
         $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $method, $functionPrefix&$method)
+        EndSwitch
     Next
 
     $sResult &= StringFormat("; Deconstructor\n")
-    If Not ($deconstructor = Null) Then
-        $methodName = $deconstructor
+    If MapExists($methods, '__destruct') Then
+        $methodName = '__destruct'
         $sResult &= StringFormat('\t$this.__destructor(%s)\n', $functionPrefix&$methodName)
     EndIf
     
     $sResult &= StringFormat("; Seal object, to prevent dynamic property declaration\n")
     $sResult &= StringFormat('\t$this.__seal()\n')
     $sResult &= StringFormat("; Constructor\n")
-    If Not ($constructor = Null) Then
-        $methodName = $constructor
+    If MapExists($methods, '__construct') Then
+        $methodName = '__construct'
         $sResult &= StringFormat('\t%s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & StringRegExpReplace($constructorParameters, '(\$[^\h=,]+)\h*=[^,]+', '$1'));FIXME: third argument in StringFormat need to be implemented. Function arguments, without the maybe existing default value definitions
         $sResult &= StringFormat('\tIf @error <> 0 Then Return SetError(@error, @extended, $this)\n')
     EndIf
@@ -267,12 +264,12 @@ Func Class_Parse_Region($aRegion)
     $sResult &= StringFormat('EndFunc\n\n')
     #EndRegion Main function
 
-    If Not ($constructor = Null) Then
-        $sResult &= Class_Make_Constructor($methods[$constructor], $functionPrefix, $constructorParameters)
+    If MapExists($methods, '__construct') Then
+        $sResult &= Class_Make_Constructor($methods['__construct'], $functionPrefix, $constructorParameters)
     EndIf
 
-    If Not ($deconstructor = Null) Then
-        $sResult &= Class_Make_Desctructor($methods[$deconstructor], $functionPrefix)
+    If MapExists($methods, '__destruct') Then
+        $sResult &= Class_Make_Desctructor($methods['__destruct'], $functionPrefix)
     EndIf
 
     For $getter In $getters
@@ -286,8 +283,12 @@ Func Class_Parse_Region($aRegion)
 
     Local $methodParameterShards
     For $method In MapKeys($methods)
-        If $method = $constructor Or $method = $deconstructor Then ContinueLoop
+        Switch $method
+            Case '__construct', '__destruct'
+                ContinueLoop
+            Case Else
         $sResult &= Class_Make_Method($methods[$method], $functionPrefix)
+        EndSwitch
     Next
 
     Return $sResult
