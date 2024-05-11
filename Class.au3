@@ -166,7 +166,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", $tObject.Variant)'&@CRLF
     $sResult &= 'Return 0'&@CRLF
     $sResult &= 'EndIf'&@CRLF
-    $sResult &= 'If BitAND($wFlags, 4) Then ; DISPATCH_PROPERTYPUT'&@CRLF
+    $sResult &= 'If BitAND($wFlags, 4) = 4 Then ; DISPATCH_PROPERTYPUT'&@CRLF
     $sResult &= '$tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
     $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
