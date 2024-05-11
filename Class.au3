@@ -161,7 +161,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperInvoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)'&@CRLF
     $sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $pSelf - 8)'&@CRLF
-    $sResult &= 'If BitAND($wFlags, 2) Then ; DISPATCH_PROPERTYGET'&@CRLF
+    $sResult &= 'If BitAND($wFlags, 2) = 2 Then ; DISPATCH_PROPERTYGET'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", $tObject.Variant)'&@CRLF
     $sResult &= 'Return 0'&@CRLF
