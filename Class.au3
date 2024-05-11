@@ -90,6 +90,13 @@ Func Class_Parse_Region($aRegion)
         EndSwitch
     Next
 
+    For $getter In MapKeys($getters)
+        If Not MapExists($properties, $getter) Then $properties[$getter] = $getter&"=Null"
+    Next
+    For $setter In MapKeys($setters)
+        If Not MapExists($properties, $setter) Then $properties[$getter] = $setter&"=Null"
+    Next
+
     If MapExists($methods, '__construct') Then
         $constructorParameters = StringRegExp($methods['__construct'], '^\h*Func [a-zA-Z0-9_]+\((\N*)\)', 1)[0]
     EndIf
