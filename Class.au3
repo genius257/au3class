@@ -435,5 +435,5 @@ Func Class_Setter_Get_Name($sSource)
 EndFunc
 
 Func Class_Property_Get_Name($sSource)
-    Return StringRegExpReplace($sSource, '^\h*\$', '', 1)
+    Return StringRegExp($sSource, '^\h*\$([_a-zA-Z0-9]+)', 1)[0]
 EndFunc
