@@ -73,7 +73,7 @@ Func Class_Parse_Region($aRegion)
         Switch (StringLower(StringRegExp($sRegionShard, "^\h*(.)", 1)[0]))
             Case '$' ; Property
                 Local $sName = Class_Property_Get_Name($sRegionShard)
-                $properties[$sName] = $sRegionShard
+                $properties[$sName] = StringRegExpReplace($sRegionShard, '^\h*\$', '', 1)
             Case 'f' ; Method
                 Local $sMethodName = Class_Function_Get_Name($sRegionShard)
                 $methods[$sMethodName] = $sRegionShard
