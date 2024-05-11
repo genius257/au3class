@@ -117,7 +117,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllStructSetData($tObject, "RefCount", 1) ; initial ref count is 1'&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Size", 7) ; number of interface methods'&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods")) ; Interface method pointers'&@CRLF
-    $sResult &= 'DllStructSetData($tVariant, "Variant", DllStructGetPtr($tVariant))'&@CRLF
+    $sResult &= 'DllStructSetData($tObject, "Variant", DllStructGetPtr($tVariant))'&@CRLF
     $sResult &= '$oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True) ; pointer that''s wrapped into object'&@CRLF
     $sResult &= 'Return $oObject'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
