@@ -223,52 +223,6 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods"))'&@CRLF
     $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
 
-    $sResult &= StringFormat('\tLocal $this = IDispatch()\n')
-
-    $sResult &= StringFormat("; Properties\n")
-    For $property In MapKeys($properties)
-        $sResult &= StringFormat('\t$this.%s\n', $property)
-    Next
-
-    Local $methodName
-    $sResult &= StringFormat("; Getters\n")
-    For $getter In MapKeys($getters)
-        $methodName = $getter
-        $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $methodName, $getterPrefix&$methodName)
-    Next
-
-    $sResult &= StringFormat("; Setters\n")
-    For $setter In MapKeys($setters)
-        $methodName = $setter
-        $sResult &= StringFormat('\t$this.__defineSetter("%s", %s)\n', $methodName, $setterPrefix&$methodName)
-    Next
-
-    $sResult &= StringFormat("; Methods\n")
-    For $method In MapKeys($methods)
-        Switch $method
-            Case "__construct", "__destruct"
-                ContinueLoop
-            Case Else
-        $sResult &= StringFormat('\t$this.__defineGetter("%s", %s)\n', $method, $functionPrefix&$method)
-        EndSwitch
-    Next
-
-    $sResult &= StringFormat("; Deconstructor\n")
-    If MapExists($methods, '__destruct') Then
-        $methodName = '__destruct'
-        $sResult &= StringFormat('\t$this.__destructor(%s)\n', $functionPrefix&$methodName)
-    EndIf
-    
-    $sResult &= StringFormat("; Seal object, to prevent dynamic property declaration\n")
-    $sResult &= StringFormat('\t$this.__seal()\n')
-    $sResult &= StringFormat("; Constructor\n")
-    If MapExists($methods, '__construct') Then
-        $methodName = '__construct'
-        $sResult &= StringFormat('\t%s($this%s)\n', $functionPrefix&$methodName, $constructorParameters == '' ? '' : ', ' & StringRegExpReplace($constructorParameters, '(\$[^\h=,]+)\h*=[^,]+', '$1'));FIXME: third argument in StringFormat need to be implemented. Function arguments, without the maybe existing default value definitions
-        $sResult &= StringFormat('\tIf @error <> 0 Then Return SetError(@error, @extended, $this)\n')
-    EndIf
-
-    $sResult &= StringFormat('\tReturn $this\n')
     $sResult &= StringFormat('EndFunc\n\n')
     #EndRegion Main function
 
