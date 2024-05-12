@@ -272,6 +272,125 @@ Func Class_Parse_Region($aRegion)
     $sResult &= StringFormat('EndFunc\n\n')
     #EndRegion Main function
 
+    #Region QueryInterface
+        $sResult &= "Func __Object__Class_"&$sClassName&"_QueryInterface($pSelf, $pRIID, $pObj)"&@CRLF
+        $sResult &= '___Class__'&$sClassName&'_VariantHelperQueryInterface($pSelf, $pRIID, $pObj)'&@CRLF
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region AddRef
+        $sResult &= "Func __Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
+        $sResult &= 'Return ___Class__'&$sClassName&'_VariantHelperAddRef($pSelf)'&@CRLF
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region Release
+        $sResult &= "Func __Object__Class_"&$sClassName&"_Release($pSelf)"&@CRLF
+        $sResult &= 'Return 1'&@CRLF; FIXME: implement release memory cleanup
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region GetTypeInfoCount
+        $sResult &= "Func __Object__Class_"&$sClassName&"_GetTypeInfoCount($pSelf, $pctinfo)"&@CRLF
+        $sResult &= 'Return ___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount($pSelf, $pctinfo)'&@CRLF
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region GetTypeInfo
+        $sResult &= "Func __Object__Class_"&$sClassName&"_GetTypeInfo($pSelf, $iTInfo, $lcid, $ppTInfo)"&@CRLF
+        $sResult &= 'Return ___Class__'&$sClassName&'_VariantHelperGetTypeInfo($pSelf, $iTInfo, $lcid, $ppTInfo)'&@CRLF
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region GetIDsOfNames
+        $sResult &= "Func __Object__Class_"&$sClassName&"_GetIDsOfNames($pSelf, $riid, $rgszNames, $cNames, $lcid, $rgDispId)"&@CRLF
+        $sResult &= 'Local $tId = DllStructCreate("long i", $rgDispId)'&@CRLF
+        $sResult &= 'Local $pStr = DllStructGetData(DllStructCreate("ptr", $rgszNames), 1)'&@CRLF
+	    $sResult &= 'Local $s_rgszName = DllStructGetData(DllStructCreate("WCHAR[255]", $pStr), 1)'&@CRLF
+        $sResult &= 'Switch $s_rgszName'&@CRLF
+        Local $i = 1
+        For $property In MapKeys($properties)
+            $sResult &= StringFormat('Case "%s"\n', $property)
+            $sResult &= StringFormat('DllStructSetData($tId, 1, %s)\n', $i)
+            $i += 1
+        Next
+
+        For $method In MapKeys($methods)
+            Switch $method
+                Case "__construct", "__destruct"
+                    ContinueLoop
+                Case Else
+                    $sResult &= StringFormat('Case "%s"\n', $method)
+                    $sResult &= StringFormat('DllStructSetData($tId, 1, %s)\n', $i)
+                    $i += 1
+            EndSwitch
+        Next
+        $sResult &= 'Case Else'&@CRLF
+        $sResult &= 'DllStructSetData($tId, 1, -1)'&@CRLF
+        $sResult &= 'Return 0x80020006'&@CRLF; DISP_E_UNKNOWNNAME
+        $sResult &= 'EndSwitch'&@CRLF
+        $sResult &= 'Return 0'&@CRLF; S_OK
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
+    #Region Invoke
+        $sResult &= "Func __Object__Class_"&$sClassName&"_Invoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)"&@CRLF
+        $sResult &= 'If $dispIdMember=-1 Then Return 0x80020003'&@CRLF; DISP_E_MEMBERNOTFOUND
+        $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pSelf - 8)"&@CRLF
+        $sResult &= 'Switch $dispIdMember'&@CRLF
+        Local $i = 1
+        For $property In MapKeys($properties)
+            $sResult &= StringFormat('Case %s\n', $i)
+            $sResult &= 'If BitAND($wFlags, 2)=2 Then'&@CRLF ; DISPATCH_PROPERTYGET
+            If MapExists($getters, $property) Then
+                $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $getterPrefix, $property, $soObject)
+                $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+                $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
+            Else
+                ;$sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
+                ;$sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
+            EndIf
+            $sResult &= "Return 0"&@CRLF; S_OK
+            $sResult &= 'EndIf'&@CRLF
+            If MapExists($setters, $property) Then
+                ;FIXME: add check for variables, convert them from variant and pass along.
+                $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                $sResult &= StringFormat('%s%s(%s)\n', $setterPrefix, $property, $soObject)
+                $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+            Else
+                $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
+                $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
+                $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",DllStructGetData($tObject, "Properties", '&$i&'), "ptr", $tParams.rgvargs)'&@CRLF
+            EndIf
+            $sResult &= "Return 0"&@CRLF; S_OK
+            $i += 1
+        Next
+        For $method In MapKeys($methods)
+            Switch $method
+                Case '__construct', '__destruct'
+                    ContinueLoop
+                Case Else
+                    $sResult &= StringFormat('Case %s\n', $i)
+                    $sResult &= 'If BitAND($wFlags, 2) = 2 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYGET, DISP_E_EXCEPTION
+                    $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                    $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $functionPrefix, $method, $soObject)
+                    $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+                    $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
+                    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
+                    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
+                    $i += 1
+            EndSwitch
+        Next
+        $sResult &= 'EndSwitch'&@CRLF
+        $sResult &= 'EndFunc'&@CRLF
+    #EndRegion
+
     If MapExists($methods, '__construct') Then
         $sResult &= Class_Make_Constructor($methods['__construct'], $functionPrefix, $constructorParameters)
     EndIf
