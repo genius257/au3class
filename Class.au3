@@ -171,6 +171,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$tObject.Variant, "ptr", $tParams.rgvargs)'&@CRLF
+    $sResult &= 'Return 0'&@CRLF; S_OK
     $sResult &= 'EndIf'&@CRLF
     $sResult &= 'Return 0x80020009 ; DISP_E_EXCEPTION'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
