@@ -221,7 +221,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tObject, "ulong_ptr", DllStructGetSize($tObject))'&@CRLF
     $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pObject)"&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods"))'&@CRLF
-    $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), $__AOI_IID_IDispatch, Default, True)'&@CRLF
+    $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
 
     $sResult &= StringFormat('\tLocal $this = IDispatch()\n')
 
