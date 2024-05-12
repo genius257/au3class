@@ -221,6 +221,19 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tObject, "ulong_ptr", DllStructGetSize($tObject))'&@CRLF
     $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pObject)"&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods"))'&@CRLF
+
+    #Region Initilize class instance property variants
+    $sResult &= 'Local Static $tVariant = DllStructCreate("ushort vt;ushort r1;ushort r2;ushort r3;PTR data;PTR data2")'&@CRLF
+    $sResult &= "DllStructSetData($tVariant, 'vt', 1)"&@CRLF; VT_NULL
+    Local $i = 1
+    For $property In MapKeys($properties)
+        ;'___Class__'&$sClassName&'_ToVariant($vValue)'
+        $sResult &= '$pObject = DllCall("kernel32.dll", "ptr", "GlobalLock", "handle", DllCall("kernel32.dll", "handle", "GlobalAlloc", "uint", 0x0002, "ulong_ptr", DllStructGetSize($tVariant))[0])[0]'&@CRLF
+        $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tVariant, "ulong_ptr", DllStructGetSize($tVariant))'&@CRLF
+        $sResult &= 'DllStructSetData($tObject, "Properties", $pObject, '&$i&')'&@CRLF
+    Next
+    #EndRegion
+
     $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
 
     $sResult &= StringFormat('EndFunc\n\n')
