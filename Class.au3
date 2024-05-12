@@ -351,6 +351,7 @@ Func Class_Parse_Region($aRegion)
                     $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
                     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
+                    $sResult &= "Return 0"&@CRLF; S_OK
                     $i += 1
             EndSwitch
         Next
