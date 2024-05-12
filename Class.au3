@@ -344,7 +344,7 @@ Func Class_Parse_Region($aRegion)
                     ContinueLoop
                 Case Else
                     $sResult &= StringFormat('Case %s\n', $i)
-                    $sResult &= 'If BitAND($wFlags, 2) = 2 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYGET, DISP_E_EXCEPTION
+                    $sResult &= 'If BitAND($wFlags, 4) = 4 Or BitAND($wFlags, 8) = 8 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYPUT, DISPATCH_PROPERTYPUTREF, DISP_E_EXCEPTION
                     $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
                     $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $functionPrefix, $method, $soObject)
                     $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
