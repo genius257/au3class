@@ -321,6 +321,7 @@ Func Class_Parse_Region($aRegion)
         $sResult &= "Func __Object__Class_"&$sClassName&"_Invoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)"&@CRLF
         $sResult &= 'If $dispIdMember=-1 Then Return 0x80020003'&@CRLF; DISP_E_MEMBERNOTFOUND
         $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pSelf - 8)"&@CRLF
+        $sResult &= 'Local Static $iVariant = DllStructGetSize(DllStructCreate("ushort vt;ushort r1;ushort r2;ushort r3;PTR data;PTR data2"))'&@CRLF
         $sResult &= 'Switch $dispIdMember'&@CRLF
         Local $i = 1
         For $property In MapKeys($properties)
@@ -360,10 +361,19 @@ Func Class_Parse_Region($aRegion)
                 Case '__construct', '__destruct'
                     ContinueLoop
                 Case Else
+                    Local $parameters = Class_Function_Get_Parameters($methods[$method])
+                    Local $iRequiredParameters = @extended
                     $sResult &= StringFormat('Case %s\n', $i)
                     $sResult &= 'If BitAND($wFlags, 4) = 4 Or BitAND($wFlags, 8) = 8 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYPUT, DISPATCH_PROPERTYPUTREF, DISP_E_EXCEPTION
+                    $sResult &= '$tDISPPARAMS = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF; tagDISPPARAMS
+                    $sResult &= 'If $tDISPPARAMS.cArgs < '&$iRequiredParameters&' Or $tDISPPARAMS.cArgs > '&UBound($parameters)&' Then Return 0x8002000E'&@CRLF; DISP_E_BADPARAMCOUNT
                     $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
-                    $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $functionPrefix, $method, $soObject)
+                    $sResult &= 'Local $parameters[$tDISPPARAMS.cArgs + 2] = ["CallArgArray", '&$soObject&']'&@CRLF
+                    $sResult &= 'Local $j = 2'&@CRLF
+                    $sResult &= 'For $i=$tDISPPARAMS.cArgs-1 To 0 Step -1'&@CRLF
+                    $sResult &= '$parameters[$j] = ___Class__'&$sClassName&'_FromVariant($tDISPPARAMS.rgvargs+$iVariant*$i)'&@CRLF
+                    $sResult &= 'Next'&@CRLF
+                    $sResult &= StringFormat('Local $vValue = Call(%s%s, $parameters)\n', $functionPrefix, $method, $soObject)
                     $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
                     $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
                     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
