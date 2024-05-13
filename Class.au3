@@ -240,7 +240,18 @@ Func Class_Parse_Region($aRegion)
     Next
     #EndRegion
 
-    $sResult &= 'Return ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
+    $sResult &= 'Local $oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
+
+    If MapExists($methods, '__construct') Then
+        $sResult &= StringFormat('%s__construct($oObject', $functionPrefix)
+        For $parameter In MapKeys(Class_Function_Get_Parameters($methods['__construct']))
+            $sResult &= ',' & $parameter
+        Next
+        $sResult &= ')'&@CRLF
+    EndIf
+    $sResult &= 'If @error <> 0 Then Return SetError(@error, @extended, 0)'&@CRLF
+
+    $sResult &= 'Return $oObject'&@CRLF
 
     $sResult &= StringFormat('EndFunc\n\n')
     #EndRegion Main function
