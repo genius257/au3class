@@ -233,7 +233,7 @@ Func Class_Parse_Region($aRegion)
             ;Initial value specified for property
             $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", ___Class__'&$sClassName&'_ToVariant('&StringMid($properties[$property], StringInStr($properties[$property], '=')+1)&'), "ulong_ptr", DllStructGetSize($tVariant))'&@CRLF
         Else
-        $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tVariant, "ulong_ptr", DllStructGetSize($tVariant))'&@CRLF
+            $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tVariant, "ulong_ptr", DllStructGetSize($tVariant))'&@CRLF
         EndIf
         $sResult &= 'DllStructSetData($tObject, "Properties", $pObject, '&$i&')'&@CRLF
         $i += 1
