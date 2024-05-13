@@ -549,3 +549,30 @@ EndFunc
 Func Class_Property_Get_Name($sSource)
     Return StringRegExp($sSource, '^\h*\$([_a-zA-Z0-9]+)', 1)[0]
 EndFunc
+
+Func Class_Function_Get_Parameters($sSource)
+    ;Local Static $sDefine = '(?(DEFINE)(?<method>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&parameter)((?&ws)?,(?&ws)?(?&parameter))*)?\))(?<parameter>(?&method)|[^(),]+)(?<ws>\h+))'
+    ;Local Static $sDefine = '(?(DEFINE)(?<method>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&parameter)((?&ws)?,(?&ws)?(?&parameter))*)?\))(?<parameter>(?&variable)((?&ws)?=(?&ws)?(?&value))?)(?<variable>\$[_a-zA-Z0-9]+)(?<value>(?&method)|[^(),]+)(?<ws>\h+))'
+    Local Static $sDefine = '(?(DEFINE)(?<function>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&parameter)((?&ws)?,(?&ws)?(?&parameter))*)?\))(?<parameter>(?&variable)((?&ws)?=(?&ws)?(?&value))?)(?<variable>\$[_a-zA-Z0-9]+)(?<value>(?&call)|[^(),]+)(?<call>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&value)((?&ws)?,(?&ws)?(?&value))*)?\))(?<ws>\h+))'
+    Local $mParameters[]
+    ; Extract function name and parameters part of string
+    Local $parameters = StringRegExp($sSource, $sDefine&'^\h*Func(?&ws)((?&function))', 1)
+    ; Extract parameters part of string
+    $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'^[_a-zA-Z]+(?&ws)?\(((?&parameter)(?:(?&ws)?,(?&ws)?(?&parameter))*)\)', 1)
+    If @error = 1 Then Return $mParameters; No parameters in method
+    ; Extract each parameter as key and value
+    $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'\G(?:^|, )((?&variable))(?:(?&ws)?=(?&ws)?((?&value)))?', 3)
+
+    $iRequiredParameters = 0
+    ; Due to bug/feature of current PCRE implementation, the groups within DEFINE still produces empty matches, per group. Currently that is 11 empty matches before the expected match.
+    For $i = 0 To UBound($parameters) - 1 Step + 13
+        ; NOTE: Using execute, to prevent out of bounds crashing, if last parameter does not have a default value. I could also use tenerary statement with count, but execute is used for now.
+        $mParameters[$parameters[$i+11]] = Execute('$parameters[$i+12]')
+        If Execute('$parameters[$i+12]') = "" Then
+            $i -= 1
+            $iRequiredParameters += 1
+        EndIf
+    Next
+
+    Return SetExtended($iRequiredParameters, $mParameters)
+EndFunc
