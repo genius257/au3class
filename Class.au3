@@ -231,6 +231,7 @@ Func Class_Parse_Region($aRegion)
         $sResult &= '$pObject = DllCall("kernel32.dll", "ptr", "GlobalLock", "handle", DllCall("kernel32.dll", "handle", "GlobalAlloc", "uint", 0x0002, "ulong_ptr", DllStructGetSize($tVariant))[0])[0]'&@CRLF
         $sResult &= 'DllCall("kernel32.dll", "none", "RtlMoveMemory", "struct*", $pObject, "struct*", $tVariant, "ulong_ptr", DllStructGetSize($tVariant))'&@CRLF
         $sResult &= 'DllStructSetData($tObject, "Properties", $pObject, '&$i&')'&@CRLF
+        $i += 1
     Next
     #EndRegion
 
