@@ -514,20 +514,13 @@ EndFunc
 Func Class_Make_Method($sSource, $functionPrefix)
     Local $sResult, _
         $methodName = Class_Function_Get_Name($sSource), _
-        $methodParameter = StringRegExp($sSource, '^\h*Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
-    
-    $methodParameter = StringSplit($methodParameter[0], ',')
-    $sResult &= StringFormat('Func %s($this)\n', $functionPrefix&$methodName)
-    If $methodParameter[0] >= 1 And Not ($methodParameter[1] == "") Then
-        For $j = 1 To $methodParameter[0] Step +1
-            $methodParameterShards = StringRegExp($methodParameter[$j], '^\h*\$([a-zA-Z0-9_]+)(?:\h*=\h*(.*)$)?', 1)
-            If UBound($methodParameterShards, 1) <= 1 Or $methodParameterShards[1] == "" Then
-                $sResult &= StringFormat('\tLocal $%s = $this.arguments.values[%s]\n', $methodParameterShards[0], $j-1)
-            Else
-                $sResult &= StringFormat('\tLocal $%s = $this.arguments.length >= %s ? $this.arguments.values[%s] : %s\n', $methodParameterShards[0], $j, $j-1, $methodParameterShards[1])
-            EndIf
-        Next
-    EndIf
+        $methodParameters = Class_Function_Get_Parameters($sSource)
+
+    $sResult &= StringFormat('Func %s($this', $functionPrefix&$methodName)
+    For $parameter In MapKeys($methodParameters)
+        $sResult &= ',' & $parameter & ($methodParameters[$parameter] = "" ? '' : '='&$methodParameters[$parameter])
+    Next
+    $sResult &= ')'&@CRLF
     $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
     $sResult &= StringFormat('EndFunc\n\n')
 
