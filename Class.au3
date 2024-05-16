@@ -345,7 +345,6 @@ Func Class_Parse_Region($aRegion)
             $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
             $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
             If MapExists($setters, $property) Then
-                ;FIXME: add check for variables, convert them from variant and pass along.
                 $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
                 $parameter = '___Class__'&$sClassName&'_FromVariant($tParams.rgvargs)'
                 $sResult &= StringFormat('%s%s(%s, %s)\n', $setterPrefix, $property, $soObject, $parameter)
