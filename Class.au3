@@ -1,7 +1,7 @@
 #include-once
 #include <Array.au3>
 
-Global Const $__AU3P_ClassRegionPattern = '(?s)(?m)^\h*\QClass \E([a-zA-Z0-9_]+)$(.*?)(?=^\h*\QEndClass\E$)EndClass'
+Global Const $__AU3P_ClassRegionPattern = '(?smi)^\h*\QClass \E([a-zA-Z0-9_]+)$(.*?)(?=^\h*\QEndClass\E$)EndClass'
 
 If StringRegExp(@ScriptFullPath, '\.au3p$', 0) Then
     Class_Convert_File(@ScriptFullPath)
@@ -524,7 +524,7 @@ EndFunc
 Func Class_Make_Setter($sSource, $setterPrefix)
     Local $sResult, _
         $methodName = Class_Setter_Get_Name($sSource), _
-        $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'^\h*Set', '')), _
+        $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'(?i)^\h*Set', '')), _
         $iRequiredParameters = @extended
 
     If $iRequiredParameters > 1 Then ConsoleWriteError(StringFormat("WARNING! setter for ""%s"" have more than one required parameter. This will cause a crash when called!\n", $methodName))
@@ -536,9 +536,7 @@ Func Class_Make_Setter($sSource, $setterPrefix)
         $sResult &= '=' & $parameters[$parameter]
     Next
     $sResult &= ')'&@CRLF
-    Local $methodParameter = StringRegExp($sSource, '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
-    $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
-    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
+    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
     $sResult &= StringFormat('\nEndFunc\n\n')
 
     Return $sResult
@@ -554,26 +552,26 @@ Func Class_Make_Method($sSource, $functionPrefix)
         $sResult &= ',' & $parameter & ($methodParameters[$parameter] = "" ? '' : '='&$methodParameters[$parameter])
     Next
     $sResult &= ')'&@CRLF
-    $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
+    $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
     $sResult &= StringFormat('EndFunc\n\n')
 
     Return $sResult
 EndFunc
 
 Func Class_Function_Get_Name($sSource)
-    Return StringRegExp($sSource, '^\h*Func\h*([^\(\h]+)', 1)[0]
+    Return StringRegExp($sSource, '(?i)^\h*Func\h*([^\(\h]+)', 1)[0]
 EndFunc
 
 Func Class_Getter_Get_Name($sSource)
-    Return StringRegExp($sSource, '^\h*Get\h+Func\h*([^\(\h]+)', 1)[0]
+    Return StringRegExp($sSource, '(?i)^\h*Get\h+Func\h*([^\(\h]+)', 1)[0]
 EndFunc
 
 Func Class_Setter_Get_Name($sSource)
-    Return StringRegExp($sSource, '^\h*Set\h+Func\h+([^\(\h]+)', 1)[0]
+    Return StringRegExp($sSource, '(?i)^\h*Set\h+Func\h+([^\(\h]+)', 1)[0]
 EndFunc
 
 Func Class_Property_Get_Name($sSource)
-    Return StringRegExp($sSource, '^\h*\$([_a-zA-Z0-9]+)', 1)[0]
+    Return StringRegExp($sSource, '(?i)^\h*\$([_a-zA-Z0-9]+)', 1)[0]
 EndFunc
 
 Func Class_Function_Get_Parameters($sSource)
@@ -582,7 +580,7 @@ Func Class_Function_Get_Parameters($sSource)
     Local Static $sDefine = '(?(DEFINE)(?<function>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&parameter)((?&ws)?,(?&ws)?(?&parameter))*)?\))(?<parameter>(?&variable)((?&ws)?=(?&ws)?(?&value))?)(?<variable>\$[_a-zA-Z0-9]+)(?<value>(?&call)|[^(),]+)(?<call>[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&value)((?&ws)?,(?&ws)?(?&value))*)?\))(?<ws>\h+))'
     Local $mParameters[]
     ; Extract function name and parameters part of string
-    Local $parameters = StringRegExp($sSource, $sDefine&'^\h*Func(?&ws)((?&function))', 1)
+    Local $parameters = StringRegExp($sSource, $sDefine&'(?i)^\h*Func(?&ws)((?&function))', 1)
     ; Extract parameters part of string
     $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'^[_a-zA-Z]+(?&ws)?\(((?&parameter)(?:(?&ws)?,(?&ws)?(?&parameter))*)\)', 1)
     If @error = 1 Then Return $mParameters; No parameters in method
