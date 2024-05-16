@@ -342,14 +342,15 @@ Func Class_Parse_Region($aRegion)
             EndIf
             $sResult &= "Return 0"&@CRLF; S_OK
             $sResult &= 'EndIf'&@CRLF
+            $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
+            $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
             If MapExists($setters, $property) Then
                 ;FIXME: add check for variables, convert them from variant and pass along.
                 $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
-                $sResult &= StringFormat('%s%s(%s)\n', $setterPrefix, $property, $soObject)
+                $parameter = '___Class__'&$sClassName&'_FromVariant($tParams.rgvargs)'
+                $sResult &= StringFormat('%s%s(%s, %s)\n', $setterPrefix, $property, $soObject, $parameter)
                 $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
             Else
-                $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
-                $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",DllStructGetData($tObject, "Properties", '&$i&'), "ptr", $tParams.rgvargs)'&@CRLF
             EndIf
@@ -510,9 +511,17 @@ EndFunc
 
 Func Class_Make_Setter($sSource, $setterPrefix)
     Local $sResult, _
-        $methodName = Class_Setter_Get_Name($sSource)
+        $methodName = Class_Setter_Get_Name($sSource), _
+        $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'^\h*Set', '')), _
+        $iRequiredParameters = @extended
 
-    $sResult &= StringFormat('Func %s($this)\n', $setterPrefix&$methodName)
+    $sResult &= StringFormat('Func %s($this', $setterPrefix&$methodName)
+    For $parameter In MapKeys($parameters)
+        $sResult &= ',' & $parameter
+        If $parameters[$parameter] = "" Then ContinueLoop
+        $sResult &= '=' & $parameters[$parameter]
+    Next
+    $sResult &= ')'&@CRLF
     Local $methodParameter = StringRegExp($sSource, '^\h*Set\h+Func\h+[a-zA-Z0-9_]+\((\N*)\)', 1)
     $methodParameter = StringRegExp(UBound($methodParameter, 1) > 0 ? $methodParameter[0] : '', '^\h*\$([a-zA-Z0-9_]+)', 1)
     $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
