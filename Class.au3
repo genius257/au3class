@@ -514,6 +514,8 @@ Func Class_Make_Setter($sSource, $setterPrefix)
         $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'^\h*Set', '')), _
         $iRequiredParameters = @extended
 
+    If $iRequiredParameters > 1 Then ConsoleWriteError(StringFormat("WARNING! setter for ""%s"" have more than one required parameter. This will cause a crash when called!\n", $methodName))
+
     $sResult &= StringFormat('Func %s($this', $setterPrefix&$methodName)
     For $parameter In MapKeys($parameters)
         $sResult &= ',' & $parameter
