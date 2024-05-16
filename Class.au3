@@ -501,11 +501,24 @@ Func Class_Make_Desctructor($sSource, $functionPrefix)
 EndFunc
 
 Func Class_Make_Getter($sSource, $getterPrefix)
-    $methodName = Class_Getter_Get_Name($sSource)
-    Return _
-        StringFormat('Func %s($this)\n', $getterPrefix&$methodName) & _
-        StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0) & _
-        StringFormat('\nEndFunc\n\n')
+    Local $sResult = '', _
+        $methodName = Class_Getter_Get_Name($sSource), _
+        $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'(?i)^\h*Get', '')), _
+        $iRequiredParameters = @extended
+
+    If $iRequiredParameters > 0 Then ConsoleWriteError(StringFormat("WARNING! getter for ""%s"" have one or more required parameters. This will cause a crash when called!\n", $methodName))
+
+    $sResult &= StringFormat('Func %s($this', $getterPrefix&$methodName)
+    For $parameter In MapKeys($parameters)
+        $sResult &= ',' & $parameter
+        If $parameters[$parameter] = "" Then ContinueLoop
+        $sResult &= '=' & $parameters[$parameter]
+    Next
+    $sResult &= ')'&@CRLF
+    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
+    $sResult &= StringFormat('\nEndFunc\n\n')
+
+    Return $sResult
 EndFunc
 
 Func Class_Make_Setter($sSource, $setterPrefix)
