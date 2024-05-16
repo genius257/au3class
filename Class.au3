@@ -522,7 +522,7 @@ Func Class_Make_Getter($sSource, $getterPrefix)
 EndFunc
 
 Func Class_Make_Setter($sSource, $setterPrefix)
-    Local $sResult, _
+    Local $sResult = '', _
         $methodName = Class_Setter_Get_Name($sSource), _
         $parameters = Class_Function_Get_Parameters(StringRegExpReplace($sSource,'(?i)^\h*Set', '')), _
         $iRequiredParameters = @extended
