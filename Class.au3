@@ -270,7 +270,25 @@ Func Class_Parse_Region($aRegion)
 
     #Region Release
         $sResult &= "Func __Object__Class_"&$sClassName&"_Release($pSelf)"&@CRLF
-        $sResult &= 'Return 1'&@CRLF; FIXME: implement release memory cleanup
+        $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pSelf - 8)"&@CRLF
+        $sResult &= "$tObject.RefCount -= 1"&@CRLF
+        $sResult &= "If $tObject.RefCount > 0 Then Return $tObject.RefCount"&@CRLF
+        If MapExists($methods, '__destruct') then
+            $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
+            $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+            $sResult &= "$tObject.RefCount += 1"&@CRLF
+            $sResult &= StringFormat("%s%s(%s)\n", $functionPrefix, Class_Function_Get_Name($methods['__destruct']), $soObject)
+            $sResult &= "$tObject.RefCount -= 1"&@CRLF
+        EndIf
+        Local $i = 1
+        For $property In MapKeys($properties)
+            $sResult &= '$pProperty = DllStructGetData($tObject, "Properties", '&$i&')'&@CRLF
+            $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pProperty)'&@CRLF
+            $sResult &= 'DllCall("kernel32.dll", "ptr", "GlobalFree", "handle", DllCall("kernel32.dll", "ptr", "GlobalHandle", "ptr", $pProperty)[0])'&@CRLF
+            $i += 1
+        Next
+        $sResult &= 'DllCall("kernel32.dll", "ptr", "GlobalFree", "handle", DllCall("kernel32.dll", "ptr", "GlobalHandle", "ptr", DllStructGetPtr($tObject))[0])'&@CRLF
+        $sResult &= 'Return 0'&@CRLF
         $sResult &= 'EndFunc'&@CRLF
     #EndRegion
 
