@@ -143,7 +143,13 @@ Func Class_Parse_Region($aRegion)
 	$sResult &= 'Return $tStruct.Ref'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperRelease($pSelf)'&@CRLF
-    $sResult &= 'Return 1'&@CRLF
+    $sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $pSelf - 8)'&@CRLF
+    $sResult &= "$tObject.RefCount -= 1"&@CRLF
+    $sResult &= "If $tObject.RefCount > 0 Then Return $tObject.RefCount"&@CRLF
+    $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
+    $sResult &= 'DllCall("kernel32.dll", "ptr", "GlobalFree", "handle", DllCall("kernel32.dll", "ptr", "GlobalHandle", "ptr", $tObject.Variant)[0])'&@CRLF
+    $sResult &= 'DllCall("kernel32.dll", "ptr", "GlobalFree", "handle", DllCall("kernel32.dll", "ptr", "GlobalHandle", "ptr", DllStructGetPtr($tObject))[0])'&@CRLF
+    $sResult &= 'Return 0'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount($pSelf, $pctinfo)'&@CRLF
     $sResult &= 'DllStructSetData(DllStructCreate("UINT",$pctinfo),1, 0)'&@CRLF
