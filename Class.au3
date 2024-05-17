@@ -328,6 +328,7 @@ Func Class_Parse_Region($aRegion)
             $sResult &= StringFormat('Case %s\n', $i)
             $sResult &= 'If BitAND($wFlags, 2)=2 Then'&@CRLF ; DISPATCH_PROPERTYGET
             If MapExists($getters, $property) Then
+                $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
                 $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
                 $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $getterPrefix, $property, $soObject)
                 $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
@@ -345,6 +346,7 @@ Func Class_Parse_Region($aRegion)
             $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
             $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
             If MapExists($setters, $property) Then
+                $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
                 $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
                 $parameter = '___Class__'&$sClassName&'_FromVariant($tParams.rgvargs)'
                 $sResult &= StringFormat('%s%s(%s, %s)\n', $setterPrefix, $property, $soObject, $parameter)
@@ -367,6 +369,7 @@ Func Class_Parse_Region($aRegion)
                     $sResult &= 'If BitAND($wFlags, 4) = 4 Or BitAND($wFlags, 8) = 8 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYPUT, DISPATCH_PROPERTYPUTREF, DISP_E_EXCEPTION
                     $sResult &= '$tDISPPARAMS = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF; tagDISPPARAMS
                     $sResult &= 'If $tDISPPARAMS.cArgs < '&$iRequiredParameters&' Or $tDISPPARAMS.cArgs > '&UBound($parameters)&' Then Return 0x8002000E'&@CRLF; DISP_E_BADPARAMCOUNT
+                    $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
                     $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
                     $sResult &= 'Local $parameters[$tDISPPARAMS.cArgs + 2] = ["CallArgArray", '&$soObject&']'&@CRLF
                     $sResult &= 'Local $j = 2'&@CRLF
