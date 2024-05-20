@@ -1,6 +1,21 @@
 #include-once
 #include <Array.au3>
 
+Global Const $__AU3P_S_OK = 0
+Global Const $__AU3P_IID_IUnknown = "{00000000-0000-0000-C000-000000000046}"
+Global Const $__AU3P_IID_IDispatch = "{00020400-0000-0000-C000-000000000046}"
+Global Const $__AU3P_VT_NULL = 1
+Global Const $__AU3P_E_NOINTERFACE = 0x80004002
+Global Const $__AU3P_E_INVALIDARG = 0x80070057
+Global Const $__AU3P_DISP_E_MEMBERNOTFOUND = 0x80020003
+Global Const $__AU3P_DISP_E_UNKNOWNNAME = 0x80020006
+Global Const $__AU3P_DISP_E_EXCEPTION = 0x80020009
+Global Const $__AU3P_DISP_E_BADINDEX = 0x8002000B
+Global Const $__AU3P_DISP_E_BADPARAMCOUNT = 0x8002000E
+Global Const $__AU3P_DISPATCH_PROPERTYGET = 2
+Global Const $__AU3P_DISPATCH_PROPERTYPUT = 4
+Global Const $__AU3P_DISPATCH_PROPERTYPUTREF = 8
+
 Global Const $__AU3P_ClassRegionPattern = '(?smi)^\h*\QClass \E([a-zA-Z0-9_]+)$(.*?)(?=^\h*\QEndClass\E$)EndClass'
 
 If StringRegExp(@ScriptFullPath, '\.au3p$', 0) Then
@@ -125,13 +140,13 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'DllStructSetData($tObject, "Size", 7) ; number of interface methods'&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Object", DllStructGetPtr($tObject, "Methods")) ; Interface method pointers'&@CRLF
     $sResult &= 'DllStructSetData($tObject, "Variant", DllStructGetPtr($tVariant))'&@CRLF
-    $sResult &= '$oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True) ; pointer that''s wrapped into object'&@CRLF
+    $sResult &= '$oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True) ; pointer that''s wrapped into object'&@CRLF
     $sResult &= 'Return $oObject'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperQueryInterface($pSelf, $pRIID, $pObj)'&@CRLF
     $sResult &= 'If $pObj=0 Then Return $__AOI_E_POINTER'&@CRLF
 	$sResult &= 'Local $sGUID=DllCall("ole32.dll", "int", "StringFromGUID2", "PTR", $pRIID, "wstr", "", "int", 40)[2]'&@CRLF
-	$sResult &= 'If (Not ($sGUID="{00020400-0000-0000-C000-000000000046}")) And (Not ($sGUID="{00000000-0000-0000-C000-000000000046}")) Then Return 0x80004002'&@CRLF
+	$sResult &= 'If (Not ($sGUID="'&$__AU3P_IID_IDispatch&'")) And (Not ($sGUID="'&$__AU3P_IID_IUnknown&'")) Then Return '&$__AU3P_E_NOINTERFACE&@CRLF
 	$sResult &= 'Local $tStruct = DllStructCreate("ptr", $pObj)'&@CRLF
 	$sResult &= 'DllStructSetData($tStruct, 1, $pSelf)'&@CRLF
 	$sResult &= '___Class__'&$sClassName&'_VariantHelperAddRef($pSelf)'&@CRLF
@@ -153,11 +168,11 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount($pSelf, $pctinfo)'&@CRLF
     $sResult &= 'DllStructSetData(DllStructCreate("UINT",$pctinfo),1, 0)'&@CRLF
-	$sResult &= 'Return $__AOI_S_OK'&@CRLF
+	$sResult &= 'Return '&$__AOI_S_OK&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfo($pSelf, $iTInfo, $lcid, $ppTInfo)'&@CRLF
-	$sResult &= 'If $iTInfo<>0 Then Return 0x8002000B'&@CRLF
-	$sResult &= 'If $ppTInfo=0 Then Return 0x80070057'&@CRLF
+	$sResult &= 'If $iTInfo<>0 Then Return '&$__AU3P_DISP_E_BADINDEX&@CRLF
+	$sResult &= 'If $ppTInfo=0 Then Return '&$__AU3P_E_INVALIDARG&@CRLF
 	$sResult &= 'Return 0'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetIDsOfNames($pSelf, $riid, $rgszNames, $cNames, $lcid, $rgDispId)'&@CRLF
@@ -167,19 +182,19 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperInvoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)'&@CRLF
     $sResult &= 'Local $tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];ptr Variant;", $pSelf - 8)'&@CRLF
-    $sResult &= 'If BitAND($wFlags, 2) = 2 Then ; DISPATCH_PROPERTYGET'&@CRLF
+    $sResult &= 'If BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYGET&') = '&$__AU3P_DISPATCH_PROPERTYGET&' Then'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", $tObject.Variant)'&@CRLF
     $sResult &= 'Return 0'&@CRLF
     $sResult &= 'EndIf'&@CRLF
-    $sResult &= 'If BitAND($wFlags, 4) = 4 Then ; DISPATCH_PROPERTYPUT'&@CRLF
+    $sResult &= 'If BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYPUT&') = '&$__AU3P_DISPATCH_PROPERTYPUT&' Then'&@CRLF
     $sResult &= '$tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
-    $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+    $sResult &= 'If $tParams.cArgs <> 1 Then Return '&$__AU3P_DISP_E_BADPARAMCOUNT&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)'&@CRLF
     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$tObject.Variant, "ptr", $tParams.rgvargs)'&@CRLF
-    $sResult &= 'Return 0'&@CRLF; S_OK
+    $sResult &= 'Return '&$__AU3P_S_OK&@CRLF
     $sResult &= 'EndIf'&@CRLF
-    $sResult &= 'Return 0x80020009 ; DISP_E_EXCEPTION'&@CRLF
+    $sResult &= 'Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
 	$sResult &= 'Local $oObject = ___Class__'&$sClassName&'_VariantHelper()'&@CRLF
@@ -246,7 +261,7 @@ Func Class_Parse_Region($aRegion)
     Next
     #EndRegion
 
-    $sResult &= 'Local $oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)'&@CRLF ; IID_IDispatch
+    $sResult &= 'Local $oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True)'&@CRLF ; IID_IDispatch
 
     If MapExists($methods, '__construct') Then
         $sResult &= StringFormat('%s__construct($oObject', $functionPrefix)
@@ -281,7 +296,7 @@ Func Class_Parse_Region($aRegion)
         $sResult &= "If $tObject.RefCount > 0 Then Return $tObject.RefCount"&@CRLF
         If MapExists($methods, '__destruct') then
             $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
-            $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+            $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True)' ; IID_IDispatch
             $sResult &= "$tObject.RefCount += 1"&@CRLF
             $sResult &= StringFormat("%s%s(%s)\n", $functionPrefix, Class_Function_Get_Name($methods['__destruct']), $soObject)
             $sResult &= "$tObject.RefCount -= 1"&@CRLF
@@ -335,15 +350,15 @@ Func Class_Parse_Region($aRegion)
         Next
         $sResult &= 'Case Else'&@CRLF
         $sResult &= 'DllStructSetData($tId, 1, -1)'&@CRLF
-        $sResult &= 'Return 0x80020006'&@CRLF; DISP_E_UNKNOWNNAME
+        $sResult &= 'Return '&$__AU3P_DISP_E_UNKNOWNNAME&@CRLF
         $sResult &= 'EndSwitch'&@CRLF
-        $sResult &= 'Return 0'&@CRLF; S_OK
+        $sResult &= 'Return '&$__AU3P_S_OK&@CRLF
         $sResult &= 'EndFunc'&@CRLF
     #EndRegion
 
     #Region Invoke
         $sResult &= "Func __Object__Class_"&$sClassName&"_Invoke($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)"&@CRLF
-        $sResult &= 'If $dispIdMember=-1 Then Return 0x80020003'&@CRLF; DISP_E_MEMBERNOTFOUND
+        $sResult &= 'If $dispIdMember=-1 Then Return '&$__AU3P_DISP_E_MEMBERNOTFOUND&@CRLF
         $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $pSelf - 8)"&@CRLF
         $sResult &= 'Local Static $iVariant = DllStructGetSize(DllStructCreate("ushort vt;ushort r1;ushort r2;ushort r3;PTR data;PTR data2"))'&@CRLF
         $sResult &= "Local Static $Invoke = DllCallbackRegister(__Object__Class_"&$sClassName&"_InvokeAccessor, 'long', 'ptr;int;ptr;int;ushort;ptr;ptr;ptr;ptr')"&@CRLF
@@ -351,7 +366,7 @@ Func Class_Parse_Region($aRegion)
         Local $i = 1
         For $property In MapKeys($properties)
             $sResult &= StringFormat('Case %s\n', $i)
-            $sResult &= 'If BitAND($wFlags, 2)=2 Then'&@CRLF ; DISPATCH_PROPERTYGET
+            $sResult &= 'If BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYGET&')='&$__AU3P_DISPATCH_PROPERTYGET&' Then'&@CRLF 
             If MapExists($getters, $property) Then
                 $sResult &= 'Local $_tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];int PropertyIndex;ptr OriginalObject;")'&@CRLF
                 $sResult &= '$_tObject.RefCount = 2; > 1 to prevent release to be triggered'&@CRLF
@@ -366,9 +381,9 @@ Func Class_Parse_Region($aRegion)
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllStructGetData($tObject, "Methods", 5), 5)'&@CRLF
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllStructGetData($tObject, "Methods", 6), 6)'&@CRLF
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllCallbackGetPtr($Invoke), 7)'&@CRLF
-                $soObject = 'ObjCreateInterface(DllStructGetPtr($_tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                $soObject = 'ObjCreateInterface(DllStructGetPtr($_tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True)'
                 $sResult &= StringFormat('Local $vValue = %s%s(%s)\n', $getterPrefix, $property, $soObject)
-                $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+                $sResult &= 'If @error <> 0 Then Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
                 $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
@@ -376,10 +391,10 @@ Func Class_Parse_Region($aRegion)
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
             EndIf
-            $sResult &= "Return 0"&@CRLF; S_OK
+            $sResult &= "Return "&$__AU3P_S_OK&@CRLF
             $sResult &= 'EndIf'&@CRLF
             $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
-            $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+            $sResult &= 'If $tParams.cArgs <> 1 Then Return '&$__AU3P_DISP_E_BADPARAMCOUNT&@CRLF
             If MapExists($setters, $property) Then
                 $sResult &= 'Local $_tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];int PropertyIndex;ptr OriginalObject;")'&@CRLF
                 $sResult &= '$_tObject.RefCount = 2; > 1 to prevent release to be triggered'&@CRLF
@@ -394,15 +409,15 @@ Func Class_Parse_Region($aRegion)
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllStructGetData($tObject, "Methods", 5), 5)'&@CRLF
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllStructGetData($tObject, "Methods", 6), 6)'&@CRLF
                 $sResult &= 'DllStructSetData($_tObject, "Methods", DllCallbackGetPtr($Invoke), 7)'&@CRLF
-                $soObject = 'ObjCreateInterface(DllStructGetPtr($_tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                $soObject = 'ObjCreateInterface(DllStructGetPtr($_tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True)' ; IID_IDispatch
                 $parameter = '___Class__'&$sClassName&'_FromVariant($tParams.rgvargs)'
                 $sResult &= StringFormat('%s%s(%s, %s)\n', $setterPrefix, $property, $soObject, $parameter)
-                $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+                $sResult &= 'If @error <> 0 Then Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
             Else
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",DllStructGetData($tObject, "Properties", '&$i&'), "ptr", $tParams.rgvargs)'&@CRLF
             EndIf
-            $sResult &= "Return 0"&@CRLF; S_OK
+            $sResult &= "Return "&$__AU3P_S_OK&@CRLF
             $i += 1
         Next
         For $method In MapKeys($methods)
@@ -413,22 +428,22 @@ Func Class_Parse_Region($aRegion)
                     Local $parameters = Class_Function_Get_Parameters($methods[$method])
                     Local $iRequiredParameters = @extended
                     $sResult &= StringFormat('Case %s\n', $i)
-                    $sResult &= 'If BitAND($wFlags, 4) = 4 Or BitAND($wFlags, 8) = 8 Then Return 0x80020009'&@CRLF; DISPATCH_PROPERTYPUT, DISPATCH_PROPERTYPUTREF, DISP_E_EXCEPTION
+                    $sResult &= 'If BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYPUT&') = '&$__AU3P_DISPATCH_PROPERTYPUT&' Or BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYPUTREF&') = '&$__AU3P_DISPATCH_PROPERTYPUTREF&' Then Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
                     $sResult &= '$tDISPPARAMS = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF; tagDISPPARAMS
-                    $sResult &= 'If $tDISPPARAMS.cArgs < '&$iRequiredParameters&' Or $tDISPPARAMS.cArgs > '&UBound($parameters)&' Then Return 0x8002000E'&@CRLF; DISP_E_BADPARAMCOUNT
+                    $sResult &= 'If $tDISPPARAMS.cArgs < '&$iRequiredParameters&' Or $tDISPPARAMS.cArgs > '&UBound($parameters)&' Then Return '&$__AU3P_DISP_E_BADPARAMCOUNT&@CRLF
                     $sResult &= "__Object__Class_"&$sClassName&"_AddRef($pSelf)"&@CRLF
-                    $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-0000-0000-C000-000000000046}", Default, True)' ; IID_IDispatch
+                    $soObject = 'ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "'&$__AU3P_IID_IDispatch&'", Default, True)' ; IID_IDispatch
                     $sResult &= 'Local $parameters[$tDISPPARAMS.cArgs + 2] = ["CallArgArray", '&$soObject&']'&@CRLF
                     $sResult &= 'Local $j = 2'&@CRLF
                     $sResult &= 'For $i=$tDISPPARAMS.cArgs-1 To 0 Step -1'&@CRLF
                     $sResult &= '$parameters[$j] = ___Class__'&$sClassName&'_FromVariant($tDISPPARAMS.rgvargs+$iVariant*$i)'&@CRLF
                     $sResult &= 'Next'&@CRLF
                     $sResult &= StringFormat('Local $vValue = Call(%s%s, $parameters)\n', $functionPrefix, $method, $soObject)
-                    $sResult &= 'If @error <> 0 Then Return 0x80020009'&@CRLF; DISP_E_EXCEPTION
+                    $sResult &= 'If @error <> 0 Then Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
                     $sResult &= '$tVariant = ___Class__'&$sClassName&'_ToVariant($vValue)'&@CRLF
                     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                     $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
-                    $sResult &= "Return 0"&@CRLF; S_OK
+                    $sResult &= "Return "&$__AU3P_S_OK&@CRLF
                     $i += 1
             EndSwitch
         Next
@@ -441,16 +456,16 @@ Func Class_Parse_Region($aRegion)
         $sResult &= 'Local $_tObject = DllStructCreate("int RefCount;int Size;ptr Object;ptr Methods[7];int PropertyIndex;ptr OriginalObject;", $pSelf - 8)'&@CRLF
         $sResult &= 'If $dispIdMember = $_tObject.PropertyIndex Then'&@CRLF
             $sResult &= "$tObject = DllStructCreate("&$sObjectStruct&", $_tObject.OriginalObject - 8)"&@CRLF
-            $sResult &= 'If BitAND($wFlags, 2)=2 Then'&@CRLF ; DISPATCH_PROPERTYGET
+            $sResult &= 'If BitAND($wFlags, '&$__AU3P_DISPATCH_PROPERTYGET&')='&$__AU3P_DISPATCH_PROPERTYGET&' Then'&@CRLF
             $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
             $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", DllStructGetData($tObject, "Properties", $dispIdMember))'&@CRLF
-            $sResult &= "Return 0"&@CRLF; S_OK
+            $sResult &= "Return "&$__AU3P_S_OK&@CRLF
             $sResult &= 'EndIf'&@CRLF
             $sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
-            $sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
+            $sResult &= 'If $tParams.cArgs <> 1 Then Return '&$__AU3P_DISP_E_BADPARAMCOUNT&@CRLF
             $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",DllStructGetData($tObject, "Properties", $dispIdMember))'&@CRLF
             $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",DllStructGetData($tObject, "Properties", $dispIdMember), "ptr", $tParams.rgvargs)'&@CRLF
-            $sResult &= "Return 0"&@CRLF; S_OK
+            $sResult &= "Return "&$__AU3P_S_OK&@CRLF
         $sResult &= 'EndIf'&@CRLF
         $sResult &= "Return __Object__Class_"&$sClassName&"_Invoke($_tObject.OriginalObject, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)"&@CRLF
         $sResult &= "EndFunc"&@CRLF
