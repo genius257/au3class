@@ -437,6 +437,7 @@ Func Class_Parse_Region($aRegion)
                     $sResult &= 'Local $j = 2'&@CRLF
                     $sResult &= 'For $i=$tDISPPARAMS.cArgs-1 To 0 Step -1'&@CRLF
                     $sResult &= '$parameters[$j] = ___Class__'&$sClassName&'_FromVariant($tDISPPARAMS.rgvargs+$iVariant*$i)'&@CRLF
+                    $sResult &= '$j+=1'&@CRLF
                     $sResult &= 'Next'&@CRLF
                     $sResult &= StringFormat('Local $vValue = Call(%s%s, $parameters)\n', $functionPrefix, $method, $soObject)
                     $sResult &= 'If @error <> 0 Then Return '&$__AU3P_DISP_E_EXCEPTION&@CRLF
