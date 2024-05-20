@@ -168,7 +168,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfoCount($pSelf, $pctinfo)'&@CRLF
     $sResult &= 'DllStructSetData(DllStructCreate("UINT",$pctinfo),1, 0)'&@CRLF
-	$sResult &= 'Return '&$__AOI_S_OK&@CRLF
+	$sResult &= 'Return '&$__AU3P_S_OK&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperGetTypeInfo($pSelf, $iTInfo, $lcid, $ppTInfo)'&@CRLF
 	$sResult &= 'If $iTInfo<>0 Then Return '&$__AU3P_DISP_E_BADINDEX&@CRLF
