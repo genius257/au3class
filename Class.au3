@@ -600,7 +600,7 @@ Func Class_Make_Getter($sSource, $getterPrefix)
         $sResult &= '=' & $parameters[$parameter]
     Next
     $sResult &= ')'&@CRLF
-    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
+    $sResult &= StringRegExpReplace(StringRegExpReplace(StringRegExp($sSource, '(?s)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '(?i)@numparams\b', '($0-1)')
     $sResult &= StringFormat('\nEndFunc\n\n')
 
     Return $sResult
@@ -621,7 +621,7 @@ Func Class_Make_Setter($sSource, $setterPrefix)
         $sResult &= '=' & $parameters[$parameter]
     Next
     $sResult &= ')'&@CRLF
-    $sResult &= StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0)
+    $sResult &= StringRegExpReplace(StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '(?i)@numparams\b', '($0-1)')
     $sResult &= StringFormat('\nEndFunc\n\n')
 
     Return $sResult
@@ -637,7 +637,7 @@ Func Class_Make_Method($sSource, $functionPrefix)
         $sResult &= ',' & $parameter & ($methodParameters[$parameter] = "" ? '' : '='&$methodParameters[$parameter])
     Next
     $sResult &= ')'&@CRLF
-    $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0))
+    $sResult &= StringFormat('\t%s\n', StringRegExpReplace(StringRegExpReplace(StringRegExp($sSource, '(?si)^.*?\N+(.*)\N+\h*EndFunc\h*$', 1)[0], '(^(\h|\R)*|(\h|\R)*$)', '', 0), '(?i)@numparams\b', '($0-1)'))
     $sResult &= StringFormat('EndFunc\n\n')
 
     Return $sResult
