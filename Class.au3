@@ -7,6 +7,7 @@ Global Const $__AU3P_IID_IDispatch = "{00020400-0000-0000-C000-000000000046}"
 Global Const $__AU3P_VT_NULL = 1
 Global Const $__AU3P_E_NOINTERFACE = 0x80004002
 Global Const $__AU3P_E_INVALIDARG = 0x80070057
+Global Const $__Au3P_E_POINTER = 0x80004003
 Global Const $__AU3P_DISP_E_MEMBERNOTFOUND = 0x80020003
 Global Const $__AU3P_DISP_E_UNKNOWNNAME = 0x80020006
 Global Const $__AU3P_DISP_E_EXCEPTION = 0x80020009
@@ -144,7 +145,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'Return $oObject'&@CRLF
     $sResult &= 'EndFunc'&@CRLF
     $sResult &= 'Func ___Class__'&$sClassName&'_VariantHelperQueryInterface($pSelf, $pRIID, $pObj)'&@CRLF
-    $sResult &= 'If $pObj=0 Then Return $__AOI_E_POINTER'&@CRLF
+    $sResult &= 'If $pObj=0 Then Return '&$__Au3P_E_POINTER&@CRLF
 	$sResult &= 'Local $sGUID=DllCall("ole32.dll", "int", "StringFromGUID2", "PTR", $pRIID, "wstr", "", "int", 40)[2]'&@CRLF
 	$sResult &= 'If (Not ($sGUID="'&$__AU3P_IID_IDispatch&'")) And (Not ($sGUID="'&$__AU3P_IID_IUnknown&'")) Then Return '&$__AU3P_E_NOINTERFACE&@CRLF
 	$sResult &= 'Local $tStruct = DllStructCreate("ptr", $pObj)'&@CRLF
