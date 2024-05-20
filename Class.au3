@@ -373,8 +373,6 @@ Func Class_Parse_Region($aRegion)
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)'&@CRLF
             Else
-                ;$sResult &= 'Local $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)'&@CRLF
-                ;$sResult &= 'If $tParams.cArgs <> 1 Then Return 0x8002000E ; DISP_E_BADPARAMCOUNT'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)'&@CRLF
                 $sResult &= 'DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", DllStructGetData($tObject, "Properties", '&$i&'))'&@CRLF
             EndIf
