@@ -20,7 +20,7 @@ Class Example
     EndFunc
 
     Set Func dynamic($value)
-		$this.property += 1
+        $this.property += 1
         $this.dynamic = $value
     EndFunc
 EndClass
