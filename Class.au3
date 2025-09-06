@@ -74,6 +74,7 @@ Func Class_Parse_Region($aRegion)
     Local $setterPrefix = StringFormat('__Setter%s', $functionPrefix)
 
     Local $aRegionShards = StringRegExp($aRegion[2], $sRegex, 3)
+    If @error = 1 Then Local $aRegionShards[0]
 
     Local $properties[], _
         $methods[], _
@@ -449,6 +450,8 @@ Func Class_Parse_Region($aRegion)
                     $i += 1
             EndSwitch
         Next
+        $sResult &= 'Case Else'&@CRLF
+        $sResult &= 'Return '&$__AU3P_DISP_E_MEMBERNOTFOUND&@CRLF
         $sResult &= 'EndSwitch'&@CRLF
         $sResult &= 'EndFunc'&@CRLF
     #EndRegion
