@@ -27,7 +27,7 @@ $oObject = ObjCreateInterface(DllStructGetPtr($tObject, "Object"), "{00020400-00
 Return $oObject
 EndFunc
 Func ___Class__Example_VariantHelperQueryInterface($pSelf, $pRIID, $pObj)
-If $pObj=0 Then Return $__AOI_E_POINTER
+If $pObj=0 Then Return -2147467261
 Local $sGUID=DllCall("ole32.dll", "int", "StringFromGUID2", "PTR", $pRIID, "wstr", "", "int", 40)[2]
 If (Not ($sGUID="{00020400-0000-0000-C000-000000000046}")) And (Not ($sGUID="{00000000-0000-0000-C000-000000000046}")) Then Return -2147467262
 Local $tStruct = DllStructCreate("ptr", $pObj)
@@ -70,7 +70,7 @@ DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)
 DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "ptr", $tObject.Variant)
 Return 0
 EndIf
-If BitAND($wFlags, 4) = 4 Then
+If BitAND($wFlags, 4) = 4 Or BitAND($wFlags, 8) = 8 Then
 $tParams = DllStructCreate("ptr rgvargs;ptr rgdispidNamedArgs;dword cArgs;dword cNamedArgs;", $pDispParams)
 If $tParams.cArgs <> 1 Then Return -2147352562
 DllCall("OleAut32.dll","LONG","VariantClear","ptr",$tObject.Variant)
@@ -237,6 +237,7 @@ Local $parameters[$tDISPPARAMS.cArgs + 2] = ["CallArgArray", ObjCreateInterface(
 Local $j = 2
 For $i=$tDISPPARAMS.cArgs-1 To 0 Step -1
 $parameters[$j] = ___Class__Example_FromVariant($tDISPPARAMS.rgvargs+$iVariant*$i)
+$j+=1
 Next
 Local $vValue = Call(__Class_Example_method, $parameters)
 If @error <> 0 Then Return -2147352567
@@ -244,6 +245,8 @@ $tVariant = ___Class__Example_ToVariant($vValue)
 DllCall("OleAut32.dll","LONG","VariantClear","ptr",$pVarResult)
 DllCall("OleAut32.dll","LONG","VariantCopy","ptr",$pVarResult, "struct*", $tVariant)
 Return 0
+Case Else
+Return -2147352573
 EndSwitch
 EndFunc
 Func __Object__Class_Example_InvokeAccessor($pSelf, $dispIdMember, $riid, $lcid, $wFlags, $pDispParams, $pVarResult, $pExcepInfo, $puArgErr)
