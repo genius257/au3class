@@ -215,7 +215,7 @@ Func Class_Parse_Region($aRegion)
     $sResult &= 'EndFunc'&@CRLF
     #EndRegion Variant Conversion Helper
 
-    Local $sObjectStruct = StringFormat("'int RefCount;int Size;ptr Object;ptr Methods[7];ptr Properties[%s];'", UBound($properties))
+    Local $sObjectStruct = "'int RefCount;int Size;ptr Object;ptr Methods[7];" & (UBound($properties) > 0 ? StringFormat("ptr Properties[%s];", UBound($properties)) : '') & "'"
 
     #Region Main function
     $sResult &= StringFormat('Func %s(%s)\n', $sClassName, $constructorParameters)
