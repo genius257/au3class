@@ -672,7 +672,7 @@ Func Class_Function_Get_Parameters($sSource)
     ; Extract function name and parameters part of string
     Local $parameters = StringRegExp($sSource, $sDefine&'(?i)^\h*Func(?&ws)((?&function))', 1)
     ; Extract parameters part of string
-    $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'^[_a-zA-Z]+(?&ws)?\(((?&parameter)(?:(?&ws)?,(?&ws)?(?&parameter))*)\)', 1)
+    $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'^[_a-zA-Z][_a-zA-Z0-9]*(?&ws)?\(((?&parameter)(?:(?&ws)?,(?&ws)?(?&parameter))*)\)', 1)
     If @error = 1 Then Return $mParameters; No parameters in method
     ; Extract each parameter as key and value
     $parameters = StringRegExp($parameters[UBound($parameters) - 1], $sDefine&'\G(?:^|, )((?&variable))(?:(?&ws)?=(?&ws)?((?&value)))?', 3)
